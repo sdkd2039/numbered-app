@@ -1,8 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- إذن الاتصال بالإنترنت لعرض موقع الويب -->
     <uses-permission android:name="android.permission.INTERNET"/>
+
     <application
         android:label="معدودات"
         android:icon="@mipmap/ic_launcher">
+        
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -15,8 +18,8 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        
-        <!-- هذا السطر هو المهم جداً لحل خطأ v1 embedding -->
+
+        <!-- حصر ومطابقة نظام Flutter الحديث لمستلزمات Android v2 Embedding -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
