@@ -1,16 +1,22 @@
-workflows:
-  android-workflow:
-    name: Android Workflow
-    max_build_duration: 30
-    instance_type: mac_mini_m1
-    environment:
-      flutter: stable
-    scripts:
-      - name: Get Flutter packages
-        script: |
-          flutter packages pub get
-      - name: Build APK
-        script: |
-          flutter build apk --release
-    artifacts:
-      - build/app/outputs/flutter-apk/*.apk
+name: numbered
+description: "تطبيق ميّسر وعدة أقسام: تلاوات، المتبقي، الذكر، نبض العدة، وبث مباشر."
+publish_to: 'none'
+
+version: 3.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  webview_flutter: ^4.7.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
