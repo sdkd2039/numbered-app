@@ -6,18 +6,33 @@ workflows:
     environment:
       flutter: stable
     scripts:
-      - name: Create Clean Android Project & Build
+      - name: Setup App Icon & Name
         script: |
-          # حذف أي مجلد أندرويد قديم متضارب
+          # تنزيل صورة أيقونة التطبيق المرفقة
+          mkdir -p assets/icon
+          curl -sL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o assets/icon/app_icon.png
+          
+          # جلب الحزم وتوليد أيقونة التطبيق
+          flutter pub get
+          dart run flutter_launcher_icons
+
+      - name: Create Clean Android Project & Set Label
+        script: |
+          # تفريغ المجلد لتفادي أي تعارض سابق
           rm -rf android
           
-          # إنشاء مشروع أندرويد جديد ونظيف
-          flutter create . --platforms=android --org=com.numbered
+          # إنشاء مجلد أندرويد بالاسم العربي "معدودات"
+          flutter create . --platforms=android --org=com.numbered --app-name="معدودات"
           
-          # رفع Android SDK إلى 36 لحل تعارض مكتبة webview
+          # تطبيق الأيقونات التي تم توليدها
+          dart run flutter_launcher_icons
+
+          # ضبط SDK إلى 36 للتوافق مع مكتبة webview
           sed -i '' 's/compileSdk = .*/compileSdk = 36/' android/app/build.gradle.kts || true
-          
-          # بناء APK
+
+      - name: Build APK
+        script: |
           flutter build apk --release
+
     artifacts:
       - build/app/outputs/flutter-apk/*.apk
