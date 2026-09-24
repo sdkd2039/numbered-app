@@ -3,60 +3,81 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MyApp());
+  runApp(const NumberedApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class NumberedApp extends StatelessWidget {
+  const NumberedApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'موقعي',
+      title: 'معدودات',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1E1E2C)),
+        useMaterial3: true,
       ),
-      home: const WebViewScreen(),
+      home: const MainWebViewScreen(),
     );
   }
 }
 
-class WebViewScreen extends StatefulWidget {
-  const WebViewScreen({super.key});
+class MainWebViewScreen extends StatefulWidget {
+  const MainWebViewScreen({super.key});
 
   @override
-  State<WebViewScreen> createState() => _WebViewScreenState();
+  State<MainWebViewScreen> createState() => _MainWebViewScreenState();
 }
 
-class _WebViewScreenState extends State<WebViewScreen> {
+class _MainWebViewScreenState extends State<MainWebViewScreen> {
   late final WebViewController _controller;
+  bool _isLoading = true;
 
   @override
   void initState() {
-    super.initState() ;
-    
-    // ضع رابط موقعك كاملاً هنا مع https://
-    const String myWebsiteUrl = 'https://numbered.casacam.net/'; 
+    super.initState();
 
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0x00000000))
+      ..setBackgroundColor(Colors.white)
       ..setNavigationDelegate(
         NavigationDelegate(
-          onPageStarted: (String url) {},
-          onPageFinished: (String url) {},
-          onWebResourceError: (WebResourceError error) {},
+          onPageStarted: (String url) {
+            setState(() {
+              _isLoading = true;
+            });
+          },
+          onPageFinished: (String url) {
+            setState(() {
+              _isLoading = false;
+            });
+          },
+          onWebResourceError: (WebResourceError error) {
+            debugPrint('WebResourceError: ${error.description}');
+          },
         ),
       )
-      ..loadRequest(Uri.parse(myWebsiteUrl));
+      // رابط الموقع المباشر والسليم
+      ..loadRequest(Uri.parse('https://sdkd2039.github.io/Numbered/'));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
-        child: WebViewWidget(controller: _controller),
+        child: Stack(
+          children: [
+            WebViewWidget(controller: _controller),
+            if (_isLoading)
+              const Center(
+                child: CircularProgressIndicator(
+                  color: Color(0xFF1E1E2C),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
