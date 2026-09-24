@@ -12,68 +12,51 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'معدودات',
       debugShowCheckedModeBanner: false,
+      title: 'موقعي',
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        useMaterial3: true,
       ),
-      home: const MainWebViewScreen(),
+      home: const WebViewScreen(),
     );
   }
 }
 
-class MainWebViewScreen extends StatefulWidget {
-  const MainWebViewScreen({super.key});
+class WebViewScreen extends StatefulWidget {
+  const WebViewScreen({super.key});
 
   @override
-  State<MainWebViewScreen> createState() => _MainWebViewScreenState();
+  State<WebViewScreen> createState() => _WebViewScreenState();
 }
 
-class _MainWebViewScreenState extends State<MainWebViewScreen> {
+class _WebViewScreenState extends State<WebViewScreen> {
   late final WebViewController _controller;
-  bool _isLoading = true;
-
-  // رابط موقعك الحالي
-  final String _websiteUrl = 'https://sdkd2039.github.io/Numbered/';
 
   @override
   void initState() {
-    super.initState();
+    super.initState() ;
+    
+    // ضع رابط موقعك كاملاً هنا مع https://
+    const String myWebsiteUrl = 'https://numbered.casacam.net/'; 
 
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0x00000000))
       ..setNavigationDelegate(
         NavigationDelegate(
-          onPageStarted: (String url) {
-            setState(() {
-              _isLoading = true;
-            });
-          },
-          onPageFinished: (String url) {
-            setState(() {
-              _isLoading = false;
-            });
-          },
+          onPageStarted: (String url) {},
+          onPageFinished: (String url) {},
+          onWebResourceError: (WebResourceError error) {},
         ),
       )
-      ..loadRequest(Uri.parse(_websiteUrl));
+      ..loadRequest(Uri.parse(myWebsiteUrl));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Stack(
-          children: [
-            WebViewWidget(controller: _controller),
-            if (_isLoading)
-              const Center(
-                child: CircularProgressIndicator(),
-              ),
-          ],
-        ),
+        child: WebViewWidget(controller: _controller),
       ),
     );
   }
