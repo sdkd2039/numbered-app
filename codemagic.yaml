@@ -8,23 +8,24 @@ workflows:
     scripts:
       - name: Build Clean Android App
         script: |
-          # 1. تنظيف أي مجلدات قديمة
+          # 1. إزالة أي بقايا سابقة
           rm -rf android
           
-          # 2. إنشاء مجلد أندرويد كامل بجميع ملفاته وباسم "معدودات"
+          # 2. إنشاء مشروع أندرويد بالاسم العربي "معدودات"
           flutter create . --platforms=android --org=com.numbered --app-name="معدودات"
           
-          # 3. تنزيل صورتك وتطبيقها كأيقونة
-          mkdir -p assets/icon
-          curl -sL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o assets/icon/app_icon.png
-          
-          flutter pub get
-          dart run flutter_launcher_icons
-          
-          # 4. رفع الـ SDK ليتوافق مع WebView
+          # 3. استبدال الأيقونة المباشرة بالصورة بدون أداة launcher_icons
+          curl -sL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          curl -sL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          curl -sL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          curl -sL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          curl -sL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+
+          # 4. رفع الـ SDK للتوافق مع WebView
           sed -i '' 's/compileSdk = .*/compileSdk = 36/' android/app/build.gradle.kts || true
           
-          # 5. بناء APK
+          # 5. جلب الحزم وبناء الـ APK
+          flutter pub get
           flutter build apk --release
           
     artifacts:
