@@ -8,7 +8,16 @@ workflows:
     scripts:
       - name: Build Android App
         script: |
+          # تنزيل الأيقونة وتثبيتها في مسارات أندرويد الرسمية
+          curl -sL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          curl -sL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          curl -sL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          curl -sL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          curl -sL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+
+          # بناء التطبيق
           flutter pub get
           flutter build apk --release
+
     artifacts:
       - build/app/outputs/flutter-apk/*.apk
