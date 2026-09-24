@@ -11,10 +11,10 @@ workflows:
           # 1. إزالة أي بقايا سابقة
           rm -rf android
           
-          # 2. إنشاء مشروع أندرويد بالاسم العربي "معدودات"
+          # 2. إنشاء مشروع أندرويد بالاسم "معدودات"
           flutter create . --platforms=android --org=com.numbered --app-name="معدودات"
           
-          # 3. استبدال الأيقونة المباشرة بالصورة بدون أداة launcher_icons
+          # 3. استبدال الأيقونة المباشرة بالصورة
           curl -sL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o android/app/src/main/res/mipmap-hdpi/ic_launcher.png
           curl -sL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o android/app/src/main/res/mipmap-mdpi/ic_launcher.png
           curl -sL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
