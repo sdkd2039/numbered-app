@@ -6,25 +6,26 @@ workflows:
     environment:
       flutter: stable
     scripts:
-      - name: Create Clean Android Project & Build
+      - name: Build Clean Android App
         script: |
-          # 1. تنزيل صورة أيقونة التطبيق
+          # 1. تنظيف أي مجلدات قديمة
+          rm -rf android
+          
+          # 2. إنشاء مجلد أندرويد كامل بجميع ملفاته وباسم "معدودات"
+          flutter create . --platforms=android --org=com.numbered --app-name="معدودات"
+          
+          # 3. تنزيل صورتك وتطبيقها كأيقونة
           mkdir -p assets/icon
           curl -sL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o assets/icon/app_icon.png
           
-          # 2. إنشاء مجلد أندرويد بالاسم العربي "معدودات"
-          rm -rf android
-          flutter create . --platforms=android --org=com.numbered --app-name="معدودات"
-          
-          # 3. جلب الحزم وتوليد أيقونة أندرويد
           flutter pub get
           dart run flutter_launcher_icons
-
-          # 4. ضبط SDK إلى 36 للتوافق مع مكتبة webview
+          
+          # 4. رفع الـ SDK ليتوافق مع WebView
           sed -i '' 's/compileSdk = .*/compileSdk = 36/' android/app/build.gradle.kts || true
-
-          # 5. بناء ملف APK
+          
+          # 5. بناء APK
           flutter build apk --release
-
+          
     artifacts:
       - build/app/outputs/flutter-apk/*.apk
