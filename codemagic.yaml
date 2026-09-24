@@ -1,16 +1,16 @@
 workflows:
   android-workflow:
-    name: Android Workflow
+    name: Android Build
     max_build_duration: 30
     instance_type: mac_mini_m1
     environment:
       flutter: stable
     scripts:
-      - name: Get Flutter packages
+      - name: Create Android Project & Build
         script: |
-          flutter packages pub get
-      - name: Build APK
-        script: |
+          # إعادة إنشاء مجلد أندرويد المتوافق مع الإصدار الحديث تلقائياً
+          flutter create . --platforms=android --org=com.numbered
+          # بناء ملف APK
           flutter build apk --release
     artifacts:
       - build/app/outputs/flutter-apk/*.apk
