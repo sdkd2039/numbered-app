@@ -1,13 +1,21 @@
 workflows:
-  android-workflow:
-    name: Android Build
-    max_build_duration: 120
+  android-native-build:
+    name: Build Numbered App
+    max_build_duration: 30
     instance_type: mac_mini_m1
+    environment:
+      java: 17
     scripts:
       - name: Build Android APK
         script: |
-          cd AlalmaeyApp
-          chmod +x gradlew
+          chmod +x gradlew || true
           ./gradlew assembleRelease
     artifacts:
-      - AlalmaeyApp/app/build/outputs/apk/**/*.apk
+      - app/build/outputs/apk/release/*.apk
+    publishing:
+      email:
+        recipients:
+          - sultan2021alamoudi@gmail.com
+        notify:
+          failure: true
+          success: false
