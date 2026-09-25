@@ -45,16 +45,13 @@ class MainActivity : AppCompatActivity() {
         // ضبط حجم الموقع ليظهر بحجمه الطبيعي على شاشة الجوال
         // =========================================================
 
-        // لا نفرض تصغير الصفحة أو تكبيرها
         webSettings.useWideViewPort = false
         webSettings.loadWithOverviewMode = false
 
-        // منع تكبير WebView
         webSettings.setSupportZoom(false)
         webSettings.builtInZoomControls = false
         webSettings.displayZoomControls = false
 
-        // المحافظة على حجم النص الأصلي للموقع
         webSettings.textZoom = 100
 
         // =========================================================
@@ -383,10 +380,8 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
-        // مهم:
         // لا نعيد تحميل الموقع هنا.
-        //
-        // لذلك عند الرجوع من واتساب أو X
+        // عند الرجوع من واتساب أو X
         // يبقى المستخدم في نفس الصفحة والمكان.
     }
 
@@ -414,9 +409,6 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
 
         webView.stopLoading()
-
-        webView.webViewClient = null
-
         webView.destroy()
 
         super.onDestroy()
