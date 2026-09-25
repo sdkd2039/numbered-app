@@ -49,22 +49,27 @@ class RemainingWidget : AppWidgetProvider() {
     }
 
     companion object {
+
         private const val ACTION_REFRESH =
             "com.numbered.app.action.REMAINING_WIDGET_REFRESH"
 
         private const val REQUEST_CODE = 1448
 
-        // تحديث العداد كل دقيقة حتى تتغير الدقائق والثواني باستمرار.
-        private const val REFRESH_INTERVAL_MILLIS = 60_000L
+        private const val REFRESH_INTERVAL_MILLIS =
+            30L * 60L * 1000L
 
-        private const val MILLIS_PER_SECOND = 1_000L
-        private const val MILLIS_PER_MINUTE = 60L * MILLIS_PER_SECOND
-        private const val MILLIS_PER_HOUR = 60L * MILLIS_PER_MINUTE
-        private const val MILLIS_PER_DAY = 24L * MILLIS_PER_HOUR
+        private const val MILLIS_PER_HOUR =
+            60L * 60L * 1000L
+
+        private const val MILLIS_PER_DAY =
+            24L * MILLIS_PER_HOUR
 
         fun updateAll(context: Context) {
             val manager = AppWidgetManager.getInstance(context)
-            val component = ComponentName(context, RemainingWidget::class.java)
+            val component = ComponentName(
+                context,
+                RemainingWidget::class.java
+            )
 
             manager.getAppWidgetIds(component).forEach { widgetId ->
                 updateOne(context, manager, widgetId)
@@ -81,10 +86,13 @@ class RemainingWidget : AppWidgetProvider() {
                 R.layout.widget_remaining
             )
 
-            val nowMillis = System.currentTimeMillis()
-            val event = RemainingEventSchedule.nextUpcoming(nowMillis)
+            val event =
+                RemainingEventSchedule.nextUpcoming(
+                    System.currentTimeMillis()
+                )
 
             if (event == null) {
+
                 views.setTextViewText(
                     R.id.remaining_event_name,
                     "لا يوجد حدث قادم"
@@ -92,30 +100,33 @@ class RemainingWidget : AppWidgetProvider() {
 
                 views.setTextViewText(
                     R.id.remaining_hijri_date,
-                    "سيتم تحديث الموعد القادم عند إضافته"
+                    ""
                 )
 
-                setTimerValues(
-                    views,
-                    "00",
-                    "00",
-                    "00",
-                    "00"
+                views.setTextViewText(
+                    R.id.remaining_days,
+                    "0"
                 )
+
+                views.setTextViewText(
+                    R.id.remaining_hours,
+                    "0"
+                )
+
             } else {
-                val remainingMillis =
-                    (event.gregorianMillis - nowMillis).coerceAtLeast(0L)
 
-                val days = remainingMillis / MILLIS_PER_DAY
+                val remainingMillis =
+                    (
+                        event.gregorianMillis -
+                            System.currentTimeMillis()
+                        ).coerceAtLeast(0L)
+
+                val days =
+                    remainingMillis / MILLIS_PER_DAY
 
                 val hours =
-                    (remainingMillis % MILLIS_PER_DAY) / MILLIS_PER_HOUR
-
-                val minutes =
-                    (remainingMillis % MILLIS_PER_HOUR) / MILLIS_PER_MINUTE
-
-                val seconds =
-                    (remainingMillis % MILLIS_PER_MINUTE) / MILLIS_PER_SECOND
+                    (remainingMillis % MILLIS_PER_DAY) /
+                        MILLIS_PER_HOUR
 
                 views.setTextViewText(
                     R.id.remaining_event_name,
@@ -127,91 +138,69 @@ class RemainingWidget : AppWidgetProvider() {
                     event.hijriDate
                 )
 
-                setTimerValues(
-                    views,
-                    days.toString(),
-                    hours.toString().padStart(2, '0'),
-                    minutes.toString().padStart(2, '0'),
-                    seconds.toString().padStart(2, '0')
+                views.setTextViewText(
+                    R.id.remaining_days,
+                    days.toString()
+                )
+
+                views.setTextViewText(
+                    R.id.remaining_hours,
+                    hours.toString()
                 )
             }
 
             manager.updateAppWidget(widgetId, views)
         }
 
-        private fun setTimerValues(
-            views: RemoteViews,
-            days: String,
-            hours: String,
-            minutes: String,
-            seconds: String
-        ) {
-            views.setTextViewText(
-                R.id.remaining_days,
-                days
-            )
-
-            views.setTextViewText(
-                R.id.remaining_hours,
-                hours
-            )
-
-            views.setTextViewText(
-                R.id.remaining_minutes,
-                minutes
-            )
-
-            views.setTextViewText(
-                R.id.remaining_seconds,
-                seconds
-            )
-        }
-
         private fun scheduleRefresh(context: Context) {
+
             val alarmManager =
-                context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+                context.getSystemService(
+                    Context.ALARM_SERVICE
+                ) as AlarmManager
 
-            val intent = Intent(
-                context,
-                RemainingWidget::class.java
-            ).apply {
-                action = ACTION_REFRESH
-            }
+            val intent =
+                Intent(context, RemainingWidget::class.java).apply {
+                    action = ACTION_REFRESH
+                }
 
-            val pendingIntent = PendingIntent.getBroadcast(
-                context,
-                REQUEST_CODE,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or
-                    PendingIntent.FLAG_IMMUTABLE
-            )
+            val pendingIntent =
+                PendingIntent.getBroadcast(
+                    context,
+                    REQUEST_CODE,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or
+                        PendingIntent.FLAG_IMMUTABLE
+                )
 
             alarmManager.setInexactRepeating(
                 AlarmManager.ELAPSED_REALTIME,
-                SystemClock.elapsedRealtime() + 1_000L,
+                SystemClock.elapsedRealtime() + 60_000L,
                 REFRESH_INTERVAL_MILLIS,
                 pendingIntent
             )
         }
 
         private fun cancelRefresh(context: Context) {
+
             val alarmManager =
-                context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+                context.getSystemService(
+                    Context.ALARM_SERVICE
+                ) as AlarmManager
 
-            val intent = Intent(
-                context,
-                RemainingWidget::class.java
-            ).apply {
-                action = ACTION_REFRESH
-            }
+            val intent =
+                Intent(context, RemainingWidget::class.java).apply {
+                    action = ACTION_REFRESH
+                }
 
-            val pendingIntent = PendingIntent.getBroadcast(
-                context,
-                REQUEST_CODE,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or
-                    PendingIntent.FLAG_IMMUTABLE
-            )
+            val pendingIntent =
+                PendingIntent.getBroadcast(
+                    context,
+                    REQUEST_CODE,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or
+                        PendingIntent.FLAG_IMMUTABLE
+                )
 
             alarmManager.cancel(pendingIntent)
         }
@@ -225,19 +214,20 @@ private data class RemainingEvent(
     val gregorianMillis: Long
 )
 
-/*
- * SINGLE EVENT-DATA SECTION.
- * These are the confirmed dates currently used by the app.
- */
 private object RemainingEventSchedule {
 
     private val confirmedEvents = listOf(
+
         RemainingEvent(
             name = "رمضان المبارك",
             hijriDate = "1 رمضان 1448هـ",
             gregorianDate = "8 فبراير 2027م",
             gregorianMillis =
-                localMidnightMillis(2027, Calendar.FEBRUARY, 8)
+                localMidnightMillis(
+                    2027,
+                    Calendar.FEBRUARY,
+                    8
+                )
         ),
 
         RemainingEvent(
@@ -245,7 +235,11 @@ private object RemainingEventSchedule {
             hijriDate = "1 شوال 1448هـ",
             gregorianDate = "9 مارس 2027م",
             gregorianMillis =
-                localMidnightMillis(2027, Calendar.MARCH, 9)
+                localMidnightMillis(
+                    2027,
+                    Calendar.MARCH,
+                    9
+                )
         ),
 
         RemainingEvent(
@@ -253,7 +247,11 @@ private object RemainingEventSchedule {
             hijriDate = "1 ذو الحجة 1448هـ",
             gregorianDate = "7 مايو 2027م",
             gregorianMillis =
-                localMidnightMillis(2027, Calendar.MAY, 7)
+                localMidnightMillis(
+                    2027,
+                    Calendar.MAY,
+                    7
+                )
         ),
 
         RemainingEvent(
@@ -261,11 +259,17 @@ private object RemainingEventSchedule {
             hijriDate = "10 ذو الحجة 1448هـ",
             gregorianDate = "16 مايو 2027م",
             gregorianMillis =
-                localMidnightMillis(2027, Calendar.MAY, 16)
+                localMidnightMillis(
+                    2027,
+                    Calendar.MAY,
+                    16
+                )
         )
     )
 
-    fun nextUpcoming(nowMillis: Long): RemainingEvent? =
+    fun nextUpcoming(
+        nowMillis: Long
+    ): RemainingEvent? =
         confirmedEvents.firstOrNull {
             it.gregorianMillis > nowMillis
         }
@@ -275,8 +279,17 @@ private object RemainingEventSchedule {
         month: Int,
         day: Int
     ): Long =
-        Calendar.getInstance(TimeZone.getDefault()).apply {
+        Calendar.getInstance(
+            TimeZone.getDefault()
+        ).apply {
             clear()
-            set(year, month, day, 0, 0, 0)
+            set(
+                year,
+                month,
+                day,
+                0,
+                0,
+                0
+            )
         }.timeInMillis
 }
