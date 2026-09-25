@@ -1,12 +1,16 @@
 package com.numbered.app
 
 import android.app.DownloadManager
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.provider.MediaStore
 import android.webkit.CookieManager
+import android.webkit.JavascriptInterface
 import android.webkit.URLUtil
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -14,6 +18,7 @@ import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import java.net.URISyntaxException
+import android.util.Base64
 
 class MainActivity : AppCompatActivity() {
 
@@ -41,10 +46,7 @@ class MainActivity : AppCompatActivity() {
         webSettings.cacheMode =
             WebSettings.LOAD_DEFAULT
 
-        // =========================================================
-        // ضبط حجم الموقع ليظهر بحجمه الطبيعي على شاشة الجوال
-        // =========================================================
-
+        // الحفاظ على حجم الموقع الطبيعي
         webSettings.useWideViewPort = false
         webSettings.loadWithOverviewMode = false
 
@@ -54,17 +56,24 @@ class MainActivity : AppCompatActivity() {
 
         webSettings.textZoom = 100
 
-        // =========================================================
-        // الكوكيز
-        // =========================================================
-
+        // السماح بالكوكيز
         val cookieManager =
             CookieManager.getInstance()
 
         cookieManager.setAcceptCookie(true)
+
         cookieManager.setAcceptThirdPartyCookies(
             webView,
             true
+        )
+
+        // =========================================================
+        // جسر تحميل الصور / الفيديو / الصوت من blob و data
+        // =========================================================
+
+        webView.addJavascriptInterface(
+            DownloadBridge(this),
+            "AndroidDownloader"
         )
 
         // =========================================================
@@ -100,6 +109,7 @@ class MainActivity : AppCompatActivity() {
                             try {
 
                                 startActivity(intent)
+
                                 return true
 
                             } catch (e: Exception) {
@@ -122,34 +132,72 @@ class MainActivity : AppCompatActivity() {
                         } catch (
                             e: URISyntaxException
                         ) {
-                            // تجاهل الرابط غير الصالح
+                            // الرابط غير صالح
                         }
 
                         return true
                     }
 
                     // =================================================
-                    // الروابط الخارجية
+                    // تحليل الرابط
                     // =================================================
 
-                    val externalLink =
-                        url.startsWith("whatsapp:") ||
-                        url.startsWith("tg:") ||
-                        url.startsWith("x:") ||
-                        url.startsWith("twitter:") ||
-                        url.startsWith("tel:") ||
-                        url.startsWith("mailto:") ||
-                        url.contains("twitter.com/intent") ||
-                        url.contains("x.com/intent")
+                    val uri =
+                        Uri.parse(url)
 
-                    if (externalLink) {
+                    val host =
+                        uri.host
+                            ?.lowercase()
+                            ?: ""
+
+                    // =================================================
+                    // منصة X / Twitter
+                    // =================================================
+
+                    val isX =
+                        host == "x.com" ||
+                        host.endsWith(".x.com") ||
+                        host == "twitter.com" ||
+                        host.endsWith(".twitter.com") ||
+                        url.startsWith("x:") ||
+                        url.startsWith("twitter:")
+
+                    // =================================================
+                    // واتساب / تيليجرام
+                    // =================================================
+
+                    val isWhatsApp =
+                        url.startsWith("whatsapp:")
+
+                    val isTelegram =
+                        url.startsWith("tg:") ||
+                        url.startsWith("telegram:")
+
+                    // =================================================
+                    // الهاتف والبريد
+                    // =================================================
+
+                    val isPhoneOrMail =
+                        url.startsWith("tel:") ||
+                        url.startsWith("mailto:")
+
+                    // =================================================
+                    // روابط خارجية
+                    // =================================================
+
+                    if (
+                        isX ||
+                        isWhatsApp ||
+                        isTelegram ||
+                        isPhoneOrMail
+                    ) {
 
                         try {
 
                             val intent =
                                 Intent(
                                     Intent.ACTION_VIEW,
-                                    Uri.parse(url)
+                                    uri
                                 )
 
                             startActivity(intent)
@@ -160,9 +208,25 @@ class MainActivity : AppCompatActivity() {
 
                             Toast.makeText(
                                 this@MainActivity,
-                                "التطبيق المطلوب غير متوفر",
+                                "التطبيق المطلوب غير متوفر، سيتم فتح الرابط خارجيًا",
                                 Toast.LENGTH_SHORT
                             ).show()
+
+                            // محاولة فتح الرابط في المتصفح
+                            try {
+
+                                val browserIntent =
+                                    Intent(
+                                        Intent.ACTION_VIEW,
+                                        Uri.parse(url)
+                                    )
+
+                                startActivity(
+                                    browserIntent
+                                )
+
+                            } catch (ignored: Exception) {
+                            }
 
                             return true
                         }
@@ -182,7 +246,7 @@ class MainActivity : AppCompatActivity() {
                             val intent =
                                 Intent(
                                     Intent.ACTION_VIEW,
-                                    Uri.parse(url)
+                                    uri
                                 )
 
                             startActivity(intent)
@@ -202,16 +266,34 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     // =================================================
-                    // روابط الموقع نفسها
-                    // تبقى داخل WebView
+                    // روابط الموقع تبقى داخل WebView
                     // =================================================
 
                     return false
                 }
+
+                // =====================================================
+                // بعد تحميل الصفحة
+                // =====================================================
+
+                override fun onPageFinished(
+                    view: WebView?,
+                    url: String?
+                ) {
+
+                    super.onPageFinished(
+                        view,
+                        url
+                    )
+
+                    injectDownloadSupport(
+                        view
+                    )
+                }
             }
 
         // =========================================================
-        // نظام تحميل الملفات
+        // DownloadManager للملفات العادية
         // =========================================================
 
         webView.setDownloadListener {
@@ -220,6 +302,29 @@ class MainActivity : AppCompatActivity() {
                 contentDisposition,
                 mimetype,
                 _ ->
+
+            // =====================================================
+            // blob / data
+            // =====================================================
+
+            if (
+                url.startsWith("blob:") ||
+                url.startsWith("data:")
+            ) {
+
+                // تتم معالجتها بواسطة JavaScript
+                Toast.makeText(
+                    applicationContext,
+                    "جاري تجهيز الملف للحفظ...",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                return@setDownloadListener
+            }
+
+            // =====================================================
+            // تحميل عادي
+            // =====================================================
 
             try {
 
@@ -235,18 +340,16 @@ class MainActivity : AppCompatActivity() {
                         Uri.parse(url)
                     )
 
-                // نوع الملف
-                if (!mimetype.isNullOrEmpty()) {
+                if (
+                    !mimetype.isNullOrEmpty()
+                ) {
 
                     request.setMimeType(
                         mimetype
                     )
                 }
 
-                // =================================================
                 // الكوكيز
-                // =================================================
-
                 val cookies =
                     CookieManager
                         .getInstance()
@@ -260,11 +363,10 @@ class MainActivity : AppCompatActivity() {
                     )
                 }
 
-                // =================================================
                 // User-Agent
-                // =================================================
-
-                if (!userAgent.isNullOrEmpty()) {
+                if (
+                    !userAgent.isNullOrEmpty()
+                ) {
 
                     request.addRequestHeader(
                         "User-Agent",
@@ -286,10 +388,6 @@ class MainActivity : AppCompatActivity() {
                     DownloadManager.Request
                         .VISIBILITY_VISIBLE_NOTIFY_COMPLETED
                 )
-
-                // =================================================
-                // حفظ الملف داخل مجلد Downloads
-                // =================================================
 
                 request.setDestinationInExternalPublicDir(
                     Environment.DIRECTORY_DOWNLOADS,
@@ -314,7 +412,7 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Exception) {
 
                 // =================================================
-                // حل احتياطي
+                // محاولة فتح الملف خارجيًا
                 // =================================================
 
                 try {
@@ -339,7 +437,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         // =========================================================
-        // استعادة الموقع بدلاً من إعادة تشغيله
+        // تحميل الصفحة
         // =========================================================
 
         if (savedInstanceState != null) {
@@ -354,6 +452,142 @@ class MainActivity : AppCompatActivity() {
                 homeUrl
             )
         }
+    }
+
+    // =============================================================
+    // إضافة دعم تحميل blob / data
+    // =============================================================
+
+    private fun injectDownloadSupport(
+        view: WebView?
+    ) {
+
+        if (view == null) {
+            return
+        }
+
+        val javascript = """
+            (function() {
+
+                if (window.__androidDownloadSupportInstalled) {
+                    return;
+                }
+
+                window.__androidDownloadSupportInstalled = true;
+
+                function sendFile(url, fileName, mimeType) {
+
+                    try {
+
+                        fetch(url)
+                            .then(function(response) {
+                                return response.blob();
+                            })
+                            .then(function(blob) {
+
+                                var reader =
+                                    new FileReader();
+
+                                reader.onloadend =
+                                    function() {
+
+                                        try {
+
+                                            AndroidDownloader.saveBase64File(
+                                                reader.result,
+                                                fileName || "download",
+                                                mimeType || blob.type || "application/octet-stream"
+                                            );
+
+                                        } catch (e) {
+                                            console.log(e);
+                                        }
+                                    };
+
+                                reader.readAsDataURL(blob);
+
+                            })
+                            .catch(function(error) {
+                                console.log(
+                                    "Download error:",
+                                    error
+                                );
+                            });
+
+                    } catch (e) {
+                        console.log(e);
+                    }
+                }
+
+                document.addEventListener(
+                    "click",
+                    function(event) {
+
+                        var element =
+                            event.target;
+
+                        while (
+                            element &&
+                            element.tagName !== "A"
+                        ) {
+                            element =
+                                element.parentElement;
+                        }
+
+                        if (!element) {
+                            return;
+                        }
+
+                        var href =
+                            element.getAttribute("href");
+
+                        if (!href) {
+                            return;
+                        }
+
+                        var isBlob =
+                            href.indexOf("blob:") === 0;
+
+                        var isData =
+                            href.indexOf("data:") === 0;
+
+                        var hasDownload =
+                            element.hasAttribute("download");
+
+                        if (
+                            (isBlob || isData) &&
+                            hasDownload
+                        ) {
+
+                            event.preventDefault();
+                            event.stopPropagation();
+
+                            var fileName =
+                                element.getAttribute("download") ||
+                                "download";
+
+                            var mimeType =
+                                element.getAttribute("type") ||
+                                "application/octet-stream";
+
+                            sendFile(
+                                href,
+                                fileName,
+                                mimeType
+                            );
+                        }
+
+                    },
+                    true
+                );
+
+            })();
+        """.trimIndent()
+
+        view.evaluateJavascript(
+            javascript,
+            null
+        )
     }
 
     // =============================================================
@@ -374,14 +608,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     // =============================================================
-    // العودة من واتساب / X / التطبيقات الخارجية
+    // العودة من X / واتساب / التطبيقات الخارجية
     // =============================================================
 
     override fun onResume() {
+
         super.onResume()
 
-        // لا نعيد تحميل الموقع هنا.
-        // عند الرجوع من واتساب أو X
+        // لا نعيد تحميل الموقع.
         // يبقى المستخدم في نفس الصفحة والمكان.
     }
 
@@ -413,4 +647,26 @@ class MainActivity : AppCompatActivity() {
 
         super.onDestroy()
     }
-}
+
+    // =============================================================
+    // جسر JavaScript -> Android
+    // =============================================================
+
+    class DownloadBridge(
+        private val context: Context
+    ) {
+
+        @JavascriptInterface
+        fun saveBase64File(
+            dataUrl: String,
+            fileName: String,
+            mimeType: String
+        ) {
+
+            try {
+
+                val commaIndex =
+                    dataUrl.indexOf(",")
+
+                if (commaIndex == -1) {
+           
