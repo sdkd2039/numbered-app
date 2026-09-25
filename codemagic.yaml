@@ -10,12 +10,37 @@ workflows:
     scripts:
       - name: Build Android APK
         script: |
+          echo "=== Enabling AndroidX ==="
           echo "android.useAndroidX=true" >> gradle.properties
           echo "android.enableJetifier=true" >> gradle.properties
 
+          echo "=== Creating launcher icon folders ==="
+          mkdir -p app/src/main/res/mipmap-mdpi
+          mkdir -p app/src/main/res/mipmap-hdpi
+          mkdir -p app/src/main/res/mipmap-xhdpi
+          mkdir -p app/src/main/res/mipmap-xxhdpi
+          mkdir -p app/src/main/res/mipmap-xxxhdpi
+
+          echo "=== Downloading app icon ==="
+
+          curl -L "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" \
+            -o app/src/main/res/mipmap-mdpi/ic_launcher.png
+
+          curl -L "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" \
+            -o app/src/main/res/mipmap-hdpi/ic_launcher.png
+
+          curl -L "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" \
+            -o app/src/main/res/mipmap-xhdpi/ic_launcher.png
+
+          curl -L "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" \
+            -o app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+
+          curl -L "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" \
+            -o app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+
+          echo "=== Building APK ==="
           gradle wrapper
           chmod +x gradlew
-
           ./gradlew :app:assembleRelease
 
     artifacts:
