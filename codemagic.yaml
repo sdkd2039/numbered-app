@@ -4,20 +4,24 @@ workflows:
     max_build_duration: 30
     instance_type: mac_mini_m1
     environment:
+      android_sdk: 33
       java: 17
     scripts:
       - name: Build Android APK
         script: |
-          # الانتقال للمجلد إذا كان المشروع داخل مجلد android
+          # الانتقال لمجلد android إن وجد
           if [ -d "android" ]; then cd android; fi
 
-          # إذا لم يكن ملف gradlew موجوداً، يتم إنشاؤه تلقائياً بواسطة gradle المثبت في النظام
-          if [ ! -f "gradlew" ]; then
-            gradle wrapper
+          # إعطاء صلاحية التنفيذ للـ gradlew إن كان موجوداً
+          if [ -f "gradlew" ]; then
+            chmod +x gradlew
+            ./gradlew assembleRelease
+          else
+            echo "Gradlew not found, generating wrapper..."
+            gradle wrapper || android update project -p .
+            chmod +x gradlew
+            ./gradlew assembleRelease
           fi
-
-          chmod +x gradlew
-          ./gradlew assembleRelease
     artifacts:
       - "**/build/outputs/apk/release/*.apk"
     publishing:
