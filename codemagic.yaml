@@ -8,23 +8,11 @@ workflows:
     scripts:
       - name: Build Android APK
         script: |
-          # البحث عن ملف build.gradle والدخول لمجلده تلقائياً أينما كان
-          BUILD_FILE=$(find . -maxdepth 3 -name "build.gradle" -o -name "build.gradle.kts" | head -n 1)
-
-          if [ -n "$BUILD_FILE" ]; then
-            cd "$(dirname "$BUILD_FILE")"
-            echo "Working directory is: $(pwd)"
-          else
-            echo "Error: No build.gradle file found in repository!"
-            exit 1
-          fi
-
-          # إنشاء الـ wrapper إن لم يكن موجوداً ثم البناء
           gradle wrapper
           chmod +x gradlew
           ./gradlew assembleRelease
     artifacts:
-      - "**/build/outputs/apk/release/*.apk"
+      - app/build/outputs/apk/release/*.apk
     publishing:
       email:
         recipients:
