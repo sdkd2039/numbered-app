@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style
+        name="WidgetTextAppearance"
+        parent="@android:style/TextAppearance.Material.Body1">
+
+        <item name="android:fontFamily">@font/the_year_of_handicrafts_bold</item>
+        <item name="android:textStyle">normal</item>
+
+    </style>
+
+</resources>
