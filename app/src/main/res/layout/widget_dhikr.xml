@@ -5,167 +5,202 @@
     android:layout_height="match_parent"
     android:layoutDirection="rtl"
     android:background="@drawable/dhikr_widget_background"
-    android:orientation="vertical"
-    android:padding="12dp">
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:padding="6dp">
 
+    <!-- النص والبيانات -->
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-        <ImageView
-            android:layout_width="44dp"
-            android:layout_height="30dp"
-            android:contentDescription="معدودات"
-            android:scaleType="centerInside"
-            android:src="@drawable/numbered" />
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:fontFamily="@font/the_year_of_handicrafts_bold"
-            android:gravity="center_vertical|end"
-            android:text="الذكر"
-            android:textColor="#F4F7FB"
-            android:textSize="18sp" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:background="@drawable/dhikr_widget_surface"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:padding="6dp">
-
-        <TextView
-            android:id="@+id/dhikr_group_previous"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="@drawable/dhikr_widget_button"
-            android:fontFamily="@font/the_year_of_handicrafts_bold"
-            android:gravity="center"
-            android:text="«"
-            android:textColor="#DDE9FF"
-            android:textSize="22sp" />
-
-        <TextView
-            android:id="@+id/dhikr_group"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:fontFamily="@font/the_year_of_handicrafts_bold"
-            android:gravity="center"
-            android:textColor="#DDE9FF"
-            android:textSize="16sp" />
-
-        <TextView
-            android:id="@+id/dhikr_group_next"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="@drawable/dhikr_widget_button"
-            android:fontFamily="@font/the_year_of_handicrafts_bold"
-            android:gravity="center"
-            android:text="»"
-            android:textColor="#DDE9FF"
-            android:textSize="22sp" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginTop="8dp"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
         android:layout_weight="1"
-        android:background="@drawable/dhikr_widget_surface"
-        android:gravity="center"
         android:orientation="vertical"
-        android:padding="12dp">
+        android:gravity="center_vertical"
+        android:paddingStart="5dp"
+        android:paddingEnd="5dp">
 
-        <ImageView
-            android:layout_width="44dp"
-            android:layout_height="34dp"
-            android:contentDescription="الذكر"
-            android:scaleType="centerInside"
-            android:src="@drawable/male" />
+        <!-- العنوان -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/dhikr_text"
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="19dp"
+                android:layout_marginEnd="4dp"
+                android:contentDescription="معدودات"
+                android:scaleType="centerInside"
+                android:src="@drawable/numbered" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="@font/the_year_of_handicrafts_bold"
+                android:gravity="center_vertical|end"
+                android:maxLines="1"
+                android:text="الذكر"
+                android:textColor="#F4F7FB"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/dhikr_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:fontFamily="@font/the_year_of_handicrafts_bold"
+                android:gravity="center"
+                android:maxLines="1"
+                android:textColor="#8FB9E8"
+                android:textSize="9sp" />
+        </LinearLayout>
+
+        <!-- الذكر -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:fontFamily="@font/the_year_of_handicrafts_bold"
-            android:gravity="center"
-            android:textColor="#F4F7FB"
-            android:textDirection="rtl"
-            android:textSize="16sp" />
+            android:layout_marginTop="2dp"
+            android:background="@drawable/dhikr_widget_surface"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="5dp"
+            android:paddingEnd="5dp">
 
-        <TextView
-            android:id="@+id/dhikr_count_label"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/the_year_of_handicrafts_bold"
-            android:gravity="center"
-            android:textColor="#AEB9C8"
-            android:textSize="13sp" />
-    </LinearLayout>
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_marginEnd="5dp"
+                android:contentDescription="الذكر"
+                android:scaleType="centerInside"
+                android:src="@drawable/male" />
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+            <TextView
+                android:id="@+id/dhikr_text"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:fontFamily="@font/the_year_of_handicrafts_bold"
+                android:gravity="center_vertical|end"
+                android:maxLines="2"
+                android:textColor="#F4F7FB"
+                android:textDirection="rtl"
+                android:textSize="11sp" />
 
-        <TextView
-            android:id="@+id/dhikr_counter_card"
-            android:layout_width="64dp"
-            android:layout_height="48dp"
-            android:background="@drawable/dhikr_widget_counter"
-            android:fontFamily="@font/the_year_of_handicrafts_bold"
-            android:gravity="center"
-            android:textColor="#FFFFFF"
-            android:textSize="22sp" />
+            <TextView
+                android:id="@+id/dhikr_count_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:fontFamily="@font/the_year_of_handicrafts_bold"
+                android:gravity="center"
+                android:maxLines="1"
+                android:textColor="#AEB9C8"
+                android:textSize="8sp" />
+        </LinearLayout>
 
+        <!-- التقدم -->
         <TextView
             android:id="@+id/dhikr_progress"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_marginTop="2dp"
             android:fontFamily="@font/the_year_of_handicrafts_bold"
             android:gravity="center"
-            android:textColor="#AEB9C8"
-            android:textSize="13sp" />
+            android:maxLines="1"
+            android:textColor="#8995A6"
+            android:textSize="8sp" />
 
+    </LinearLayout>
+
+    <!-- أزرار التنقل -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <!-- التنقل بين مجموعات الذكر -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/dhikr_group_previous"
+                android:layout_width="25dp"
+                android:layout_height="25dp"
+                android:background="@drawable/dhikr_widget_button"
+                android:fontFamily="@font/the_year_of_handicrafts_bold"
+                android:gravity="center"
+                android:text="«"
+                android:textColor="#DDE9FF"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/dhikr_group_next"
+                android:layout_width="25dp"
+                android:layout_height="25dp"
+                android:layout_marginStart="3dp"
+                android:background="@drawable/dhikr_widget_button"
+                android:fontFamily="@font/the_year_of_handicrafts_bold"
+                android:gravity="center"
+                android:text="»"
+                android:textColor="#DDE9FF"
+                android:textSize="14sp" />
+
+        </LinearLayout>
+
+        <!-- العداد -->
+        <TextView
+            android:id="@+id/dhikr_counter_card"
+            android:layout_width="38dp"
+            android:layout_height="28dp"
+            android:layout_marginTop="3dp"
+            android:background="@drawable/dhikr_widget_counter"
+            android:fontFamily="@font/the_year_of_handicrafts_bold"
+            android:gravity="center"
+            android:maxLines="1"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp" />
+
+        <!-- السابق / التالي -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:gravity="center"
             android:orientation="horizontal">
 
             <TextView
                 android:id="@+id/dhikr_previous"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_marginEnd="6dp"
+                android:layout_width="25dp"
+                android:layout_height="25dp"
                 android:background="@drawable/dhikr_widget_button"
                 android:fontFamily="@font/the_year_of_handicrafts_bold"
                 android:gravity="center"
                 android:text="‹"
                 android:textColor="#DDE9FF"
-                android:textSize="27sp" />
+                android:textSize="17sp" />
 
             <TextView
                 android:id="@+id/dhikr_next"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="25dp"
+                android:layout_height="25dp"
+                android:layout_marginStart="3dp"
                 android:background="@drawable/dhikr_widget_button"
                 android:fontFamily="@font/the_year_of_handicrafts_bold"
                 android:gravity="center"
                 android:text="›"
                 android:textColor="#DDE9FF"
-                android:textSize="27sp" />
+                android:textSize="17sp" />
+
         </LinearLayout>
+
     </LinearLayout>
+
 </LinearLayout>
