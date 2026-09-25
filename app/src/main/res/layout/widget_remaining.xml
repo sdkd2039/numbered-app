@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="12dp"
+    android:background="#FFF8E7">
+
+    <TextView
+        android:id="@+id/remaining_event_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textColor="#3B2A17"
+        android:textSize="21sp"
+        android:fontFamily="@font/the_year_of_handicrafts_bold" />
+
+    <TextView
+        android:id="@+id/remaining_hijri_date"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:gravity="center"
+        android:textColor="#3B2A17"
+        android:textSize="15sp"
+        android:fontFamily="@font/the_year_of_handicrafts_bold" />
+
+    <TextView
+        android:id="@+id/remaining_gregorian_date"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textColor="#3B2A17"
+        android:textSize="15sp"
+        android:fontFamily="@font/the_year_of_handicrafts_bold" />
+
+    <TextView
+        android:id="@+id/remaining_countdown"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:textColor="#3B2A17"
+        android:textSize="18sp"
+        android:fontFamily="@font/the_year_of_handicrafts_bold" />
+
+</LinearLayout>
