@@ -6,103 +6,457 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.view.View
 import android.widget.RemoteViews
 
 class DhikrWidget : AppWidgetProvider() {
-    override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
+
+    override fun onUpdate(
+        context: Context,
+        manager: AppWidgetManager,
+        ids: IntArray
+    ) {
         ids.forEach { widgetId ->
-            render(context, widgetId, DhikrRepository.loadCached(context))
+            render(
+                context,
+                widgetId,
+                DhikrRepository.loadCached(context)
+            )
         }
 
+        // تحديث البيانات من CSV في الخلفية
         DhikrRepository.refresh(context) { data ->
-            val appWidgetManager = AppWidgetManager.getInstance(context)
-            val component = ComponentName(context, DhikrWidget::class.java)
-            appWidgetManager.getAppWidgetIds(component).forEach { widgetId ->
-                render(context, widgetId, data)
-            }
+            val appWidgetManager =
+                AppWidgetManager.getInstance(context)
+
+            val component =
+                ComponentName(context, DhikrWidget::class.java)
+
+            appWidgetManager
+                .getAppWidgetIds(component)
+                .forEach { widgetId ->
+                    render(context, widgetId, data)
+                }
         }
     }
 
-    override fun onReceive(context: Context, intent: Intent) {
+    override fun onReceive(
+        context: Context,
+        intent: Intent
+    ) {
         super.onReceive(context, intent)
+
         val widgetId = intent.getIntExtra(
             AppWidgetManager.EXTRA_APPWIDGET_ID,
             AppWidgetManager.INVALID_APPWIDGET_ID
         )
-        if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return
+
+        if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
+            return
+        }
 
         when (intent.action) {
+
             ACTION_PREVIOUS,
             ACTION_NEXT,
             ACTION_GROUP_PREVIOUS,
             ACTION_GROUP_NEXT -> {
-                val data = DhikrRepository.loadCached(context)
+
+                val data =
+                    DhikrRepository.loadCached(context)
+
                 if (data.isNotEmpty()) {
-                    move(context, widgetId, data, intent.action!!)
-                    render(context, widgetId, data)
+
+                    move(
+                        context,
+                        widgetId,
+                        data,
+                        intent.action!!
+                    )
+
+                    render(
+                        context,
+                        widgetId,
+                        data
+                    )
                 }
             }
         }
     }
 
     companion object {
-        private const val PREFS = "dhikr_widget_state"
-        private const val KEY_GROUP = "group_"
-        private const val KEY_INDEX = "index_"
 
-        const val ACTION_PREVIOUS = "com.numbered.app.action.DHIKR_PREVIOUS"
-        const val ACTION_NEXT = "com.numbered.app.action.DHIKR_NEXT"
-        const val ACTION_GROUP_PREVIOUS = "com.numbered.app.action.DHIKR_GROUP_PREVIOUS"
-        const val ACTION_GROUP_NEXT = "com.numbered.app.action.DHIKR_GROUP_NEXT"
+        private const val PREFS =
+            "dhikr_widget_state"
 
-        private fun render(context: Context, widgetId: Int, data: List<DhikrEntry>) {
-            val views = RemoteViews(context.packageName, R.layout.widget_dhikr)
-            val groups = data.map { it.group }.distinct()
-            val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            val groupIndex = if (groups.isEmpty()) 0 else prefs.getInt(KEY_GROUP + widgetId, 0)
-                .coerceIn(0, groups.lastIndex)
-            val entries = if (groups.isEmpty()) emptyList() else data.filter { it.group == groups[groupIndex] }
-            val entryIndex = if (entries.isEmpty()) 0 else prefs.getInt(KEY_INDEX + widgetId, 0)
-                .coerceIn(0, entries.lastIndex)
-            val entry = entries.getOrNull(entryIndex)
+        private const val KEY_GROUP =
+            "group_"
 
-            val selectedGroup = if (groups.isEmpty()) "الذكر" else groups[groupIndex]
-            val selectedCounter = entry?.count?.trim().orEmpty()
-            val selectedProgress = if (entries.isEmpty()) "" else "${entryIndex + 1} / ${entries.size}"
+        private const val KEY_INDEX =
+            "index_"
 
-            views.setTextViewText(R.id.dhikr_group, selectedGroup)
-            views.setTextViewText(R.id.dhikr_text, entry?.text ?: "لا توجد بيانات متاحة")
-            views.setTextViewText(R.id.dhikr_count_label, if (selectedCounter.isNotBlank()) "عدد المرات: $selectedCounter" else "")
-            views.setTextViewText(R.id.dhikr_counter_card, selectedCounter)
-            views.setTextViewText(R.id.dhikr_progress, selectedProgress)
+        const val ACTION_PREVIOUS =
+            "com.numbered.app.action.DHIKR_PREVIOUS"
 
-            views.setViewVisibility(R.id.dhikr_group_previous, if (groups.size > 1) View.VISIBLE else View.GONE)
-            views.setViewVisibility(R.id.dhikr_group_next, if (groups.size > 1) View.VISIBLE else View.GONE)
-            views.setViewVisibility(R.id.dhikr_counter_card, if (selectedCounter.isNotBlank()) View.VISIBLE else View.GONE)
-            views.setViewVisibility(R.id.dhikr_count_label, if (selectedCounter.isNotBlank()) View.VISIBLE else View.GONE)
-            views.setViewVisibility(R.id.dhikr_progress, if (selectedProgress.isNotBlank()) View.VISIBLE else View.GONE)
+        const val ACTION_NEXT =
+            "com.numbered.app.action.DHIKR_NEXT"
 
-            bind(views, context, widgetId, R.id.dhikr_previous, ACTION_PREVIOUS)
-            bind(views, context, widgetId, R.id.dhikr_next, ACTION_NEXT)
-            bind(views, context, widgetId, R.id.dhikr_group_previous, ACTION_GROUP_PREVIOUS)
-            bind(views, context, widgetId, R.id.dhikr_group_next, ACTION_GROUP_NEXT)
+        const val ACTION_GROUP_PREVIOUS =
+            "com.numbered.app.action.DHIKR_GROUP_PREVIOUS"
 
-            context.packageManager.getLaunchIntentForPackage(context.packageName)?.let { launchIntent ->
-                views.setOnClickPendingIntent(
-                    R.id.dhikr_root,
-                    PendingIntent.getActivity(
-                        context,
-                        widgetId,
-                        launchIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                    )
+        const val ACTION_GROUP_NEXT =
+            "com.numbered.app.action.DHIKR_GROUP_NEXT"
+
+        /*
+         * تحديث Widget واحد
+         */
+        private fun render(
+            context: Context,
+            widgetId: Int,
+            data: List<DhikrEntry>
+        ) {
+
+            val views =
+                RemoteViews(
+                    context.packageName,
+                    R.layout.widget_dhikr
                 )
-            }
 
-            AppWidgetManager.getInstance(context).updateAppWidget(widgetId, views)
+            val groups =
+                data
+                    .map { it.group }
+                    .distinct()
+
+            val prefs =
+                context.getSharedPreferences(
+                    PREFS,
+                    Context.MODE_PRIVATE
+                )
+
+            val groupIndex =
+                if (groups.isEmpty()) {
+                    0
+                } else {
+                    prefs.getInt(
+                        KEY_GROUP + widgetId,
+                        0
+                    ).coerceIn(
+                        0,
+                        groups.lastIndex
+                    )
+                }
+
+            val entries =
+                if (groups.isEmpty()) {
+                    emptyList()
+                } else {
+                    data.filter {
+                        it.group == groups[groupIndex]
+                    }
+                }
+
+            val entryIndex =
+                if (entries.isEmpty()) {
+                    0
+                } else {
+                    prefs.getInt(
+                        KEY_INDEX + widgetId,
+                        0
+                    ).coerceIn(
+                        0,
+                        entries.lastIndex
+                    )
+                }
+
+            val entry =
+                entries.getOrNull(entryIndex)
+
+            /*
+             * بيانات العرض
+             */
+
+            val selectedGroup =
+                if (groups.isEmpty()) {
+                    "الذكر"
+                } else {
+                    groups[groupIndex]
+                }
+
+            val selectedCounter =
+                entry?.count
+                    ?.trim()
+                    .orEmpty()
+
+            /*
+             * رقم الذكر الحقيقي داخل المجموعة
+             *
+             * مثال:
+             * 1 / 7
+             * 2 / 7
+             * 3 / 7
+             */
+            val selectedProgress =
+                if (entries.isEmpty()) {
+                    ""
+                } else {
+                    "${entryIndex + 1} / ${entries.size}"
+                }
+
+            /*
+             * النصوص الأساسية
+             */
+
+            views.setTextViewText(
+                R.id.dhikr_group,
+                selectedGroup
+            )
+
+            views.setTextViewText(
+                R.id.dhikr_text,
+                entry?.text ?: "لا توجد بيانات متاحة"
+            )
+
+            views.setTextViewText(
+                R.id.dhikr_count_label,
+                if (selectedCounter.isNotBlank()) {
+                    "عدد المرات: $selectedCounter"
+                } else {
+                    ""
+                }
+            )
+
+            views.setTextViewText(
+                R.id.dhikr_counter_card,
+                selectedCounter
+            )
+
+            /*
+             * رقم الذكر
+             *
+             * نستخدم نفس خانة التقدم الموجودة
+             * في التصميم الحالي بدل إضافة ID جديد.
+             */
+            views.setTextViewText(
+                R.id.dhikr_progress,
+                selectedProgress
+            )
+
+            /*
+             * إظهار/إخفاء العناصر
+             */
+
+            views.setViewVisibility(
+                R.id.dhikr_group_previous,
+                if (groups.size > 1)
+                    android.view.View.VISIBLE
+                else
+                    android.view.View.GONE
+            )
+
+            views.setViewVisibility(
+                R.id.dhikr_group_next,
+                if (groups.size > 1)
+                    android.view.View.VISIBLE
+                else
+                    android.view.View.GONE
+            )
+
+            views.setViewVisibility(
+                R.id.dhikr_counter_card,
+                if (selectedCounter.isNotBlank())
+                    android.view.View.VISIBLE
+                else
+                    android.view.View.GONE
+            )
+
+            views.setViewVisibility(
+                R.id.dhikr_count_label,
+                if (selectedCounter.isNotBlank())
+                    android.view.View.VISIBLE
+                else
+                    android.view.View.GONE
+            )
+
+            views.setViewVisibility(
+                R.id.dhikr_progress,
+                if (selectedProgress.isNotBlank())
+                    android.view.View.VISIBLE
+                else
+                    android.view.View.GONE
+            )
+
+            /*
+             * تطبيق الخط المخصص على جميع نصوص Widget
+             *
+             * يعتمد على:
+             * R.style.WidgetTextAppearance
+             */
+            applyFont(
+                views,
+                R.id.dhikr_group
+            )
+
+            applyFont(
+                views,
+                R.id.dhikr_text
+            )
+
+            applyFont(
+                views,
+                R.id.dhikr_count_label
+            )
+
+            applyFont(
+                views,
+                R.id.dhikr_counter_card
+            )
+
+            applyFont(
+                views,
+                R.id.dhikr_progress
+            )
+
+            /*
+             * أزرار التنقل
+             */
+
+            bind(
+                views,
+                context,
+                widgetId,
+                R.id.dhikr_previous,
+                ACTION_PREVIOUS
+            )
+
+            bind(
+                views,
+                context,
+                widgetId,
+                R.id.dhikr_next,
+                ACTION_NEXT
+            )
+
+            bind(
+                views,
+                context,
+                widgetId,
+                R.id.dhikr_group_previous,
+                ACTION_GROUP_PREVIOUS
+            )
+
+            bind(
+                views,
+                context,
+                widgetId,
+                R.id.dhikr_group_next,
+                ACTION_GROUP_NEXT
+            )
+
+            /*
+             * الضغط على منطقة الذكر نفسها
+             *
+             * عند الضغط على النص ينتقل للذكر التالي.
+             */
+            val nextIntent =
+                Intent(
+                    context,
+                    DhikrWidget::class.java
+                ).apply {
+                    action = ACTION_NEXT
+
+                    putExtra(
+                        AppWidgetManager.EXTRA_APPWIDGET_ID,
+                        widgetId
+                    )
+                }
+
+            views.setOnClickPendingIntent(
+                R.id.dhikr_text,
+                PendingIntent.getBroadcast(
+                    context,
+                    widgetId * 1000 + 1,
+                    nextIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or
+                            PendingIntent.FLAG_IMMUTABLE
+                )
+            )
+
+            /*
+             * الضغط على رقم الذكر أيضًا
+             * ينتقل للذكر التالي.
+             */
+            val progressIntent =
+                Intent(
+                    context,
+                    DhikrWidget::class.java
+                ).apply {
+                    action = ACTION_NEXT
+
+                    putExtra(
+                        AppWidgetManager.EXTRA_APPWIDGET_ID,
+                        widgetId
+                    )
+                }
+
+            views.setOnClickPendingIntent(
+                R.id.dhikr_progress,
+                PendingIntent.getBroadcast(
+                    context,
+                    widgetId * 1000 + 2,
+                    progressIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or
+                            PendingIntent.FLAG_IMMUTABLE
+                )
+            )
+
+            /*
+             * الضغط على جسم الـWidget
+             * يفتح التطبيق.
+             */
+            context.packageManager
+                .getLaunchIntentForPackage(
+                    context.packageName
+                )
+                ?.let { launchIntent ->
+
+                    views.setOnClickPendingIntent(
+                        R.id.dhikr_root,
+                        PendingIntent.getActivity(
+                            context,
+                            widgetId,
+                            launchIntent,
+                            PendingIntent.FLAG_UPDATE_CURRENT or
+                                    PendingIntent.FLAG_IMMUTABLE
+                        )
+                    )
+                }
+
+            /*
+             * تحديث الـWidget
+             */
+            AppWidgetManager
+                .getInstance(context)
+                .updateAppWidget(
+                    widgetId,
+                    views
+                )
         }
 
+        /*
+         * تطبيق TextAppearance المخصص
+         */
+        private fun applyFont(
+            views: RemoteViews,
+            viewId: Int
+        ) {
+            views.setTextViewTextAppearance(
+                viewId,
+                R.style.WidgetTextAppearance
+            )
+        }
+
+        /*
+         * ربط زر بإجراء معين
+         */
         private fun bind(
             views: RemoteViews,
             context: Context,
@@ -110,10 +464,20 @@ class DhikrWidget : AppWidgetProvider() {
             viewId: Int,
             action: String
         ) {
-            val intent = Intent(context, DhikrWidget::class.java).apply {
-                this.action = action
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
-            }
+
+            val intent =
+                Intent(
+                    context,
+                    DhikrWidget::class.java
+                ).apply {
+
+                    this.action = action
+
+                    putExtra(
+                        AppWidgetManager.EXTRA_APPWIDGET_ID,
+                        widgetId
+                    )
+                }
 
             views.setOnClickPendingIntent(
                 viewId,
@@ -121,35 +485,127 @@ class DhikrWidget : AppWidgetProvider() {
                     context,
                     widgetId * 10 + viewId,
                     intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                    PendingIntent.FLAG_UPDATE_CURRENT or
+                            PendingIntent.FLAG_IMMUTABLE
                 )
             )
         }
 
-        private fun move(context: Context, widgetId: Int, data: List<DhikrEntry>, action: String) {
-            val groups = data.map { it.group }.distinct()
-            if (groups.isEmpty()) return
+        /*
+         * التنقل بين الأذكار والمجموعات
+         */
+        private fun move(
+            context: Context,
+            widgetId: Int,
+            data: List<DhikrEntry>,
+            action: String
+        ) {
 
-            val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            var groupIndex = prefs.getInt(KEY_GROUP + widgetId, 0).coerceIn(0, groups.lastIndex)
-            var entryIndex = prefs.getInt(KEY_INDEX + widgetId, 0)
+            val groups =
+                data
+                    .map { it.group }
+                    .distinct()
 
-            if (action == ACTION_GROUP_PREVIOUS || action == ACTION_GROUP_NEXT) {
-                val delta = if (action == ACTION_GROUP_NEXT) 1 else -1
-                groupIndex = (groupIndex + delta + groups.size) % groups.size
-                entryIndex = 0
-            } else {
-                val entries = data.filter { it.group == groups[groupIndex] }
-                if (entries.isEmpty()) return
-                val delta = if (action == ACTION_NEXT) 1 else -1
-                entryIndex = (entryIndex + delta + entries.size) % entries.size
+            if (groups.isEmpty()) {
+                return
             }
 
+            val prefs =
+                context.getSharedPreferences(
+                    PREFS,
+                    Context.MODE_PRIVATE
+                )
+
+            var groupIndex =
+                prefs.getInt(
+                    KEY_GROUP + widgetId,
+                    0
+                ).coerceIn(
+                    0,
+                    groups.lastIndex
+                )
+
+            var entryIndex =
+                prefs.getInt(
+                    KEY_INDEX + widgetId,
+                    0
+                )
+
+            /*
+             * التنقل بين مجموعات الأذكار
+             */
+            if (
+                action == ACTION_GROUP_PREVIOUS ||
+                action == ACTION_GROUP_NEXT
+            ) {
+
+                val delta =
+                    if (
+                        action ==
+                        ACTION_GROUP_NEXT
+                    ) {
+                        1
+                    } else {
+                        -1
+                    }
+
+                groupIndex =
+                    (
+                        groupIndex +
+                                delta +
+                                groups.size
+                        ) % groups.size
+
+                // عند تغيير المجموعة
+                // نبدأ من أول ذكر
+                entryIndex = 0
+
+            } else {
+
+                /*
+                 * التنقل بين الأذكار
+                 */
+                val entries =
+                    data.filter {
+                        it.group ==
+                                groups[groupIndex]
+                    }
+
+                if (entries.isEmpty()) {
+                    return
+                }
+
+                val delta =
+                    if (
+                        action ==
+                        ACTION_NEXT
+                    ) {
+                        1
+                    } else {
+                        -1
+                    }
+
+                entryIndex =
+                    (
+                        entryIndex +
+                                delta +
+                                entries.size
+                        ) % entries.size
+            }
+
+            /*
+             * حفظ الحالة
+             */
             prefs.edit()
-                .putInt(KEY_GROUP + widgetId, groupIndex)
-                .putInt(KEY_INDEX + widgetId, entryIndex)
+                .putInt(
+                    KEY_GROUP + widgetId,
+                    groupIndex
+                )
+                .putInt(
+                    KEY_INDEX + widgetId,
+                    entryIndex
+                )
                 .apply()
         }
     }
 }
-
