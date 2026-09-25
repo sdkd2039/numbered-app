@@ -8,7 +8,7 @@
     android:padding="6dp"
     android:background="#1B1F26">
 
-    <!-- اسم الحدث + شعار التطبيق -->
+    <!-- الشعار + اسم الحدث -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -17,12 +17,13 @@
         android:layoutDirection="rtl">
 
         <ImageView
-            android:layout_width="25dp"
-            android:layout_height="19dp"
-            android:layout_marginEnd="5dp"
-            android:contentDescription="معدودات"
+            android:id="@+id/remaining_logo"
+            android:layout_width="28dp"
+            android:layout_height="22dp"
+            android:layout_marginEnd="6dp"
+            android:contentDescription="المتبقي"
             android:scaleType="centerInside"
-            android:src="@drawable/numbered" />
+            android:src="@drawable/residual" />
 
         <TextView
             android:id="@+id/remaining_event_name"
@@ -31,14 +32,14 @@
             android:layout_weight="1"
             android:ellipsize="end"
             android:fontFamily="@font/the_year_of_handicrafts_bold"
-            android:gravity="end|center_vertical"
+            android:gravity="center_vertical|end"
             android:maxLines="1"
             android:textColor="#F4F7FB"
             android:textSize="12sp" />
 
     </LinearLayout>
 
-    <!-- العداد الرقمي -->
+    <!-- العداد -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -48,7 +49,7 @@
         android:orientation="horizontal"
         android:layoutDirection="rtl">
 
-        <!-- الأيام -->
+        <!-- اليوم -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
@@ -67,9 +68,9 @@
                 android:fontFamily="@font/the_year_of_handicrafts_bold"
                 android:gravity="center"
                 android:maxLines="1"
-                android:text="00"
+                android:text="0"
                 android:textColor="#62A9F5"
-                android:textSize="18sp" />
+                android:textSize="22sp" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -77,13 +78,13 @@
                 android:fontFamily="@font/the_year_of_handicrafts_bold"
                 android:gravity="center"
                 android:maxLines="1"
-                android:text="يوم"
-                android:textColor="#9CA8B8"
-                android:textSize="8sp" />
+                android:text="اليوم"
+                android:textColor="#AEB9C8"
+                android:textSize="9sp" />
 
         </LinearLayout>
 
-        <!-- الساعات -->
+        <!-- الساعة -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
@@ -102,9 +103,9 @@
                 android:fontFamily="@font/the_year_of_handicrafts_bold"
                 android:gravity="center"
                 android:maxLines="1"
-                android:text="00"
+                android:text="0"
                 android:textColor="#62A9F5"
-                android:textSize="18sp" />
+                android:textSize="22sp" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -112,79 +113,9 @@
                 android:fontFamily="@font/the_year_of_handicrafts_bold"
                 android:gravity="center"
                 android:maxLines="1"
-                android:text="ساعة"
-                android:textColor="#9CA8B8"
-                android:textSize="8sp" />
-
-        </LinearLayout>
-
-        <!-- الدقائق -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:layout_marginStart="2dp"
-            android:layout_marginEnd="2dp"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:background="@drawable/timer_unit_background">
-
-            <TextView
-                android:id="@+id/remaining_minutes"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:fontFamily="@font/the_year_of_handicrafts_bold"
-                android:gravity="center"
-                android:maxLines="1"
-                android:text="00"
-                android:textColor="#62A9F5"
-                android:textSize="18sp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/the_year_of_handicrafts_bold"
-                android:gravity="center"
-                android:maxLines="1"
-                android:text="دقيقة"
-                android:textColor="#9CA8B8"
-                android:textSize="8sp" />
-
-        </LinearLayout>
-
-        <!-- الثواني -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:layout_marginStart="2dp"
-            android:layout_marginEnd="2dp"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:background="@drawable/timer_unit_background">
-
-            <TextView
-                android:id="@+id/remaining_seconds"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:fontFamily="@font/the_year_of_handicrafts_bold"
-                android:gravity="center"
-                android:maxLines="1"
-                android:text="00"
-                android:textColor="#62A9F5"
-                android:textSize="18sp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/the_year_of_handicrafts_bold"
-                android:gravity="center"
-                android:maxLines="1"
-                android:text="ثانية"
-                android:textColor="#9CA8B8"
-                android:textSize="8sp" />
+                android:text="الساعة"
+                android:textColor="#AEB9C8"
+                android:textSize="9sp" />
 
         </LinearLayout>
 
