@@ -16,5 +16,6 @@ workflows:
       email:
         recipients:
           - sultan2021alamoudi@gmail.com
-        failure: true # إرسال إشعار عبر البريد عند فشل عملية البناء
-        success: false # إلغاء الإشعارات عند نجاح البناء (يمكنك تغييرها إلى true إن أردت)
+        notify:
+          failure: true   # إرسال إشعار عند فشل البناء
+          success: false  # إلغاء الإشعارات عند نجاح البناء (يمكنك تعديلها إلى true)
