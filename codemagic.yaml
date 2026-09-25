@@ -11,10 +11,17 @@ workflows:
       - name: Build Android APK
         script: |
           echo "=== Enabling AndroidX ==="
-          echo "android.useAndroidX=true" >> gradle.properties
-          echo "android.enableJetifier=true" >> gradle.properties
+
+          if ! grep -q "^android.useAndroidX=" gradle.properties; then
+            echo "android.useAndroidX=true" >> gradle.properties
+          fi
+
+          if ! grep -q "^android.enableJetifier=" gradle.properties; then
+            echo "android.enableJetifier=true" >> gradle.properties
+          fi
 
           echo "=== Creating launcher icon folders ==="
+
           mkdir -p app/src/main/res/mipmap-mdpi
           mkdir -p app/src/main/res/mipmap-hdpi
           mkdir -p app/src/main/res/mipmap-xhdpi
@@ -38,13 +45,14 @@ workflows:
           curl -L "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" \
             -o app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
 
-          echo "=== Building APK ==="
+          echo "=== Building DEBUG APK ==="
+
           gradle wrapper
           chmod +x gradlew
-          ./gradlew :app:assembleRelease
+          ./gradlew clean :app:assembleDebug
 
     artifacts:
-      - app/build/outputs/apk/release/*.apk
+      - app/build/outputs/apk/debug/*.apk
 
     publishing:
       email:
