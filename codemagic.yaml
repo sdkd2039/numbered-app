@@ -1,22 +1,36 @@
 workflows:
-  android-native-build:
-    name: Build Numbered App
+  android-workflow:
+    name: Android Build
     max_build_duration: 30
     instance_type: mac_mini_m1
+
     environment:
-      java: 17
+      flutter: stable
+
     scripts:
-      - name: Build Android APK
+      - name: Build App Clean
         script: |
-          gradle wrapper
-          chmod +x gradlew
-          ./gradlew :app:assembleRelease
+          rm -rf android
+
+          flutter create . --org=com.numbered
+
+          # تفعيل AndroidX و Jetifier
+          echo "android.useAndroidX=true" >> android/gradle.properties
+          echo "android.enableJetifier=true" >> android/gradle.properties
+
+          # اسم التطبيق
+          sed -i '' 's/android:label=".*"/android:label="معدودات"/' android/app/src/main/AndroidManifest.xml
+
+          # أيقونة التطبيق
+          curl -sL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          curl -sL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          curl -sL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          curl -sL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          curl -sL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+
+          flutter pub get
+
+          flutter build apk --release
+
     artifacts:
-      - app/build/outputs/apk/release/*.apk
-    publishing:
-      email:
-        recipients:
-          - sultan2021alamoudi@gmail.com
-        notify:
-          failure: true
-          success: false
+      - build/app/outputs/flutter-apk/*.apk
