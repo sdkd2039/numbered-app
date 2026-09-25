@@ -22,11 +22,19 @@ internal object DhikrRepository {
     fun loadCached(context: Context): List<DhikrEntry> {
         val encoded = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .getString(KEY_ROWS, null) ?: return emptyList()
+
         return encoded.split('\n').mapNotNull { line ->
             val fields = line.split('|', limit = 4)
             if (fields.size == 4) {
-                DhikrEntry(decode(fields[0]), decode(fields[1]), decode(fields[2]), decode(fields[3]))
-            } else null
+                DhikrEntry(
+                    group = decode(fields[0]),
+                    text = decode(fields[1]),
+                    count = decode(fields[2]),
+                    id = decode(fields[3])
+                )
+            } else {
+                null
+            }
         }
     }
 
@@ -47,8 +55,9 @@ internal object DhikrRepository {
             if (fresh.isNotEmpty()) {
                 val serialized = fresh.joinToString("\n") { entry ->
                     listOf(entry.group, entry.text, entry.count, entry.id)
-                        .joinToString("|") { encode(it) }
+                        .joinToString("|") { value -> encode(value) }
                 }
+
                 context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                     .edit()
                     .putString(KEY_ROWS, serialized)
@@ -62,52 +71,56 @@ internal object DhikrRepository {
     }
 
     /*
-     * The repository CSV has no header row. Its actual columns are:
-     * group, dhikr text, repetition count, stable id.
-     * This parser supports commas in quoted fields and escaped quotes.
+     * The repository CSV contains these columns in order:
+     * group, dhikr text, repetition count, stable id
+     * It has no header row and may contain quoted commas.
      */
     private fun parseCsv(csv: String): List<DhikrEntry> {
         val rows = mutableListOf<List<String>>()
-        val row = mutableListOf<String>()
-        val field = StringBuilder()
-        var quoted = false
+        val currentRow = mutableListOf<String>()
+        val currentField = StringBuilder()
+        var inQuotes = false
         var index = 0
 
         fun finishField() {
-            row += field.toString()
-            field.setLength(0)
+            currentRow.add(currentField.toString())
+            currentField.setLength(0)
         }
 
         fun finishRow() {
-            if (row.isNotEmpty() || field.isNotEmpty()) {
+            if (currentRow.isNotEmpty() || currentField.isNotEmpty()) {
                 finishField()
-                rows += row.toList()
-                row.clear()
+                rows.add(currentRow.toList())
+                currentRow.clear()
             }
         }
 
         while (index < csv.length) {
             val character = csv[index]
             when {
-                character == '"' && quoted && index + 1 < csv.length && csv[index + 1] == '"' -> {
-                    field.append('"')
+                character == '"' && inQuotes && index + 1 < csv.length && csv[index + 1] == '"' -> {
+                    currentField.append('"')
                     index++
                 }
-                character == '"' -> quoted = !quoted
-                character == ',' && !quoted -> finishField()
-                character == '\n' && !quoted -> finishRow()
-                character == '\r' && !quoted -> Unit
-                else -> field.append(character)
+                character == '"' -> inQuotes = !inQuotes
+                character == ',' && !inQuotes -> finishField()
+                character == '\n' && !inQuotes -> finishRow()
+                character == '\r' -> Unit
+                else -> currentField.append(character)
             }
             index++
         }
-        if (quoted || field.isNotEmpty() || row.isNotEmpty()) finishRow()
+
+        if (inQuotes || currentField.isNotEmpty() || currentRow.isNotEmpty()) {
+            finishRow()
+        }
 
         return rows.mapNotNull { columns ->
             if (columns.size < 2) return@mapNotNull null
             val group = columns[0].trim()
             val text = columns[1].trim()
             if (group.isEmpty() || text.isEmpty()) return@mapNotNull null
+
             DhikrEntry(
                 group = group,
                 text = text,
@@ -117,12 +130,15 @@ internal object DhikrRepository {
         }
     }
 
-    private fun encode(value: String) =
-        Base64.encodeToString(value.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+    private fun encode(value: String): String = Base64.encodeToString(
+        value.toByteArray(Charsets.UTF_8),
+        Base64.NO_WRAP
+    )
 
-    private fun decode(value: String) = try {
+    private fun decode(value: String): String = try {
         String(Base64.decode(value, Base64.DEFAULT), Charsets.UTF_8)
     } catch (_: Exception) {
         ""
     }
 }
+

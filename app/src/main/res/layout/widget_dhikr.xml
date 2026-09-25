@@ -3,11 +3,10 @@
     android:id="@+id/dhikr_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center"
     android:layoutDirection="rtl"
-    android:padding="12dp"
-    android:background="@drawable/dhikr_widget_background">
+    android:background="@drawable/dhikr_widget_background"
+    android:orientation="vertical"
+    android:padding="12dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -17,7 +16,7 @@
 
         <ImageView
             android:layout_width="44dp"
-            android:layout_height="32dp"
+            android:layout_height="30dp"
             android:contentDescription="معدودات"
             android:scaleType="centerInside"
             android:src="@drawable/numbered" />
@@ -49,9 +48,9 @@
             android:background="@drawable/dhikr_widget_button"
             android:fontFamily="@font/the_year_of_handicrafts_bold"
             android:gravity="center"
-            android:text="‹"
-            android:textColor="#D6E7FF"
-            android:textSize="25sp" />
+            android:text="«"
+            android:textColor="#DDE9FF"
+            android:textSize="22sp" />
 
         <TextView
             android:id="@+id/dhikr_group"
@@ -60,8 +59,8 @@
             android:layout_weight="1"
             android:fontFamily="@font/the_year_of_handicrafts_bold"
             android:gravity="center"
-            android:textColor="#BFD9FF"
-            android:textSize="17sp" />
+            android:textColor="#DDE9FF"
+            android:textSize="16sp" />
 
         <TextView
             android:id="@+id/dhikr_group_next"
@@ -70,16 +69,16 @@
             android:background="@drawable/dhikr_widget_button"
             android:fontFamily="@font/the_year_of_handicrafts_bold"
             android:gravity="center"
-            android:text="›"
-            android:textColor="#D6E7FF"
-            android:textSize="25sp" />
+            android:text="»"
+            android:textColor="#DDE9FF"
+            android:textSize="22sp" />
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
         android:layout_marginTop="8dp"
+        android:layout_weight="1"
         android:background="@drawable/dhikr_widget_surface"
         android:gravity="center"
         android:orientation="vertical"
@@ -149,24 +148,23 @@
                 android:id="@+id/dhikr_previous"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:layout_marginStart="4dp"
+                android:layout_marginEnd="6dp"
                 android:background="@drawable/dhikr_widget_button"
                 android:fontFamily="@font/the_year_of_handicrafts_bold"
                 android:gravity="center"
                 android:text="‹"
-                android:textColor="#D6E7FF"
+                android:textColor="#DDE9FF"
                 android:textSize="27sp" />
 
             <TextView
                 android:id="@+id/dhikr_next"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:layout_marginStart="6dp"
                 android:background="@drawable/dhikr_widget_button"
                 android:fontFamily="@font/the_year_of_handicrafts_bold"
                 android:gravity="center"
                 android:text="›"
-                android:textColor="#D6E7FF"
+                android:textColor="#DDE9FF"
                 android:textSize="27sp" />
         </LinearLayout>
     </LinearLayout>
