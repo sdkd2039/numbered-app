@@ -1,527 +1,138 @@
-package com.numbered.app
-
-import android.app.AlarmManager
-import android.app.PendingIntent
-import android.appwidget.AppWidgetManager
-import android.appwidget.AppWidgetProvider
-import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
-import android.os.SystemClock
-import android.widget.RemoteViews
-import java.util.Calendar
-import java.util.TimeZone
-import kotlin.math.roundToInt
-
-class RemainingWidget : AppWidgetProvider() {
-
-    override fun onUpdate(
-        context: Context,
-        appWidgetManager: AppWidgetManager,
-        appWidgetIds: IntArray
-    ) {
-        updateAll(context)
-        scheduleRefresh(context)
-    }
-
-    override fun onEnabled(context: Context) {
-        super.onEnabled(context)
-        updateAll(context)
-        scheduleRefresh(context)
-    }
-
-    override fun onDisabled(context: Context) {
-        cancelRefresh(context)
-        super.onDisabled(context)
-    }
-
-    override fun onReceive(
-        context: Context,
-        intent: Intent
-    ) {
-        super.onReceive(context, intent)
-
-        when (intent.action) {
-
-            ACTION_REFRESH,
-            Intent.ACTION_DATE_CHANGED,
-            Intent.ACTION_TIME_CHANGED,
-            Intent.ACTION_TIMEZONE_CHANGED -> {
-
-                updateAll(context)
-                scheduleRefresh(context)
-            }
-        }
-    }
-
-    companion object {
-
-        private const val ACTION_REFRESH =
-            "com.numbered.app.action.REMAINING_WIDGET_REFRESH"
-
-        private const val REQUEST_CODE = 1448
-
-        private const val REFRESH_INTERVAL_MILLIS =
-            30L * 60L * 1000L
-
-        private const val MILLIS_PER_HOUR =
-            60L * 60L * 1000L
-
-        private const val MILLIS_PER_DAY =
-            24L * MILLIS_PER_HOUR
-
-
-        fun updateAll(context: Context) {
-
-            val manager =
-                AppWidgetManager.getInstance(context)
-
-            val component =
-                ComponentName(
-                    context,
-                    RemainingWidget::class.java
-                )
-
-            manager
-                .getAppWidgetIds(component)
-                .forEach { widgetId ->
-
-                    updateOne(
-                        context,
-                        manager,
-                        widgetId
-                    )
-                }
-        }
-
-
-        private fun updateOne(
-            context: Context,
-            manager: AppWidgetManager,
-            widgetId: Int
-        ) {
-
-            val views =
-                RemoteViews(
-                    context.packageName,
-                    R.layout.widget_remaining
-                )
-
-            val now =
-                System.currentTimeMillis()
-
-            val event =
-                RemainingEventSchedule.nextUpcoming(now)
-
-
-            if (event == null) {
-
-                views.setTextViewText(
-                    R.id.remaining_event_name,
-                    "لا يوجد حدث قادم"
-                )
-
-                views.setTextViewText(
-                    R.id.remaining_hijri_date,
-                    ""
-                )
-
-                views.setTextViewText(
-                    R.id.remaining_days,
-                    "0"
-                )
-
-                views.setTextViewText(
-                    R.id.remaining_hours,
-                    "0"
-                )
-
-                views.setProgressBar(
-                    R.id.remaining_progress,
-                    100,
-                    100,
-                    false
-                )
-
-            } else {
-
-                val remainingMillis =
-                    (
-                        event.gregorianMillis - now
-                    ).coerceAtLeast(0L)
-
-
-                val days =
-                    remainingMillis /
-                        MILLIS_PER_DAY
-
-
-                val hours =
-                    (
-                        remainingMillis %
-                            MILLIS_PER_DAY
-                    ) / MILLIS_PER_HOUR
-
-
-                val previousEvent =
-                    RemainingEventSchedule.previousEvent(
-                        event.gregorianMillis
-                    )
-
-
-                val totalDuration =
-                    if (previousEvent != null) {
-
-                        (
-                            event.gregorianMillis -
-                                previousEvent.gregorianMillis
-                        ).coerceAtLeast(1L)
-
-                    } else {
-
-                        MILLIS_PER_DAY
-                    }
-
-
-                val elapsed =
-                    (
-                        now -
-                            (
-                                event.gregorianMillis -
-                                    totalDuration
-                            )
-                    ).coerceIn(
-                        0L,
-                        totalDuration
-                    )
-
-
-                val progress =
-                    (
-                        elapsed.toDouble() /
-                            totalDuration.toDouble() *
-                            100.0
-                    )
-                        .roundToInt()
-                        .coerceIn(
-                            0,
-                            100
-                        )
-
-
-                views.setTextViewText(
-                    R.id.remaining_event_name,
-                    event.name
-                )
-
-                /*
-                 * التاريخ يظهر هجري + ميلادي
-                 *
-                 * مثال:
-                 * 1 رمضان 1448هـ | 8 فبراير 2027م
-                 */
-                views.setTextViewText(
-                    R.id.remaining_hijri_date,
-                    "${event.hijriDate} | ${event.gregorianDate}"
-                )
-
-
-                views.setTextViewText(
-                    R.id.remaining_days,
-                    days.toString()
-                )
-
-
-                views.setTextViewText(
-                    R.id.remaining_hours,
-                    hours.toString()
-                )
-
-
-                views.setProgressBar(
-                    R.id.remaining_progress,
-                    100,
-                    progress,
-                    false
-                )
-            }
-
-
-            /*
-             * تطبيق الخط المخصص على عناصر الويدجت
-             */
-            applyFont(
-                views,
-                R.id.remaining_event_name
-            )
-
-            applyFont(
-                views,
-                R.id.remaining_hijri_date
-            )
-
-            applyFont(
-                views,
-                R.id.remaining_days
-            )
-
-            applyFont(
-                views,
-                R.id.remaining_hours
-            )
-
-
-            manager.updateAppWidget(
-                widgetId,
-                views
-            )
-        }
-
-
-        private fun applyFont(
-            views: RemoteViews,
-            viewId: Int
-        ) {
-
-            views.setTextViewTextAppearance(
-                viewId,
-                R.style.WidgetTextAppearance
-            )
-        }
-
-
-        private fun scheduleRefresh(
-            context: Context
-        ) {
-
-            val alarmManager =
-                context.getSystemService(
-                    Context.ALARM_SERVICE
-                ) as AlarmManager
-
-
-            val intent =
-                Intent(
-                    context,
-                    RemainingWidget::class.java
-                ).apply {
-
-                    action =
-                        ACTION_REFRESH
-                }
-
-
-            val pendingIntent =
-                PendingIntent.getBroadcast(
-                    context,
-                    REQUEST_CODE,
-                    intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or
-                        PendingIntent.FLAG_IMMUTABLE
-                )
-
-
-            alarmManager.setInexactRepeating(
-                AlarmManager.ELAPSED_REALTIME,
-                SystemClock.elapsedRealtime() + 60_000L,
-                REFRESH_INTERVAL_MILLIS,
-                pendingIntent
-            )
-        }
-
-
-        private fun cancelRefresh(
-            context: Context
-        ) {
-
-            val alarmManager =
-                context.getSystemService(
-                    Context.ALARM_SERVICE
-                ) as AlarmManager
-
-
-            val intent =
-                Intent(
-                    context,
-                    RemainingWidget::class.java
-                ).apply {
-
-                    action =
-                        ACTION_REFRESH
-                }
-
-
-            val pendingIntent =
-                PendingIntent.getBroadcast(
-                    context,
-                    REQUEST_CODE,
-                    intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or
-                        PendingIntent.FLAG_IMMUTABLE
-                )
-
-
-            alarmManager.cancel(
-                pendingIntent
-            )
-        }
-    }
-}
-
-
-/*
- * بيانات الحدث
- */
-private data class RemainingEvent(
-
-    val name: String,
-
-    val hijriDate: String,
-
-    val gregorianDate: String,
-
-    val gregorianMillis: Long
-)
-
-
-/*
- * جدول الأحداث
- */
-private object RemainingEventSchedule {
-
-    private val confirmedEvents =
-        listOf(
-
-            RemainingEvent(
-
-                name =
-                    "رمضان المبارك",
-
-                hijriDate =
-                    "1 رمضان 1448هـ",
-
-                gregorianDate =
-                    "8 فبراير 2027م",
-
-                gregorianMillis =
-                    localMidnightMillis(
-                        2027,
-                        Calendar.FEBRUARY,
-                        8
-                    )
-            ),
-
-
-            RemainingEvent(
-
-                name =
-                    "عيد الفطر المبارك",
-
-                hijriDate =
-                    "1 شوال 1448هـ",
-
-                gregorianDate =
-                    "9 مارس 2027م",
-
-                gregorianMillis =
-                    localMidnightMillis(
-                        2027,
-                        Calendar.MARCH,
-                        9
-                    )
-            ),
-
-
-            RemainingEvent(
-
-                name =
-                    "عشر ذي الحجة",
-
-                hijriDate =
-                    "1 ذو الحجة 1448هـ",
-
-                gregorianDate =
-                    "7 مايو 2027م",
-
-                gregorianMillis =
-                    localMidnightMillis(
-                        2027,
-                        Calendar.MAY,
-                        7
-                    )
-            ),
-
-
-            RemainingEvent(
-
-                name =
-                    "عيد الأضحى المبارك",
-
-                hijriDate =
-                    "10 ذو الحجة 1448هـ",
-
-                gregorianDate =
-                    "16 مايو 2027م",
-
-                gregorianMillis =
-                    localMidnightMillis(
-                        2027,
-                        Calendar.MAY,
-                        16
-                    )
-            )
-        )
-
-
-    fun nextUpcoming(
-        nowMillis: Long
-    ): RemainingEvent? =
-
-        confirmedEvents.firstOrNull {
-
-            it.gregorianMillis >
-                nowMillis
-        }
-
-
-    fun previousEvent(
-        eventMillis: Long
-    ): RemainingEvent? =
-
-        confirmedEvents
-            .filter {
-
-                it.gregorianMillis <
-                    eventMillis
-            }
-            .maxByOrNull {
-
-                it.gregorianMillis
-            }
-
-
-    private fun localMidnightMillis(
-        year: Int,
-        month: Int,
-        day: Int
-    ): Long =
-
-        Calendar
-            .getInstance(
-                TimeZone.getDefault()
-            )
-            .apply {
-
-                clear()
-
-                set(
-                    year,
-                    month,
-                    day,
-                    0,
-                    0,
-                    0
-                )
-            }
-            .timeInMillis
-}
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/remaining_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layoutDirection="rtl"
+    android:orientation="vertical"
+    android:padding="6dp"
+    android:background="#1B1F26">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:layoutDirection="rtl">
+
+        <ImageView
+            android:id="@+id/remaining_logo"
+            android:layout_width="28dp"
+            android:layout_height="22dp"
+            android:layout_marginEnd="6dp"
+            android:contentDescription="المتبقي"
+            android:scaleType="centerInside"
+            android:src="@drawable/residual" />
+
+        <TextView
+            android:id="@+id/remaining_event_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:gravity="center_vertical|end"
+            android:maxLines="1"
+            android:textColor="#F4F7FB"
+            android:textSize="12sp" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="4dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:layoutDirection="rtl">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:background="@drawable/timer_unit_background">
+
+            <TextView
+                android:id="@+id/remaining_days"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:maxLines="1"
+                android:text="0"
+                android:textColor="#62A9F5"
+                android:textSize="22sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:maxLines="1"
+                android:text="اليوم"
+                android:textColor="#AEB9C8"
+                android:textSize="9sp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:background="@drawable/timer_unit_background">
+
+            <TextView
+                android:id="@+id/remaining_hours"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:maxLines="1"
+                android:text="0"
+                android:textColor="#62A9F5"
+                android:textSize="22sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:maxLines="1"
+                android:text="الساعة"
+                android:textColor="#AEB9C8"
+                android:textSize="9sp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/remaining_progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:layout_marginStart="3dp"
+        android:layout_marginEnd="3dp"
+        android:layout_marginTop="4dp"
+        android:max="100"
+        android:progress="0"
+        android:indeterminate="false" />
+
+    <TextView
+        android:id="@+id/remaining_hijri_date"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:maxLines="1"
+        android:textColor="#8995A6"
+        android:textSize="8sp" />
+
+</LinearLayout>
