@@ -9,17 +9,17 @@
     android:background="@drawable/dhikr_widget_background"
     android:padding="6dp">
 
-    <!-- منطقة الذكر -->
+    <!-- المحتوى الرئيسي -->
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:orientation="vertical"
         android:gravity="center_vertical"
-        android:paddingStart="4dp"
+        android:paddingStart="5dp"
         android:paddingEnd="5dp">
 
-        <!-- العنوان -->
+        <!-- العنوان والمجموعة -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -27,37 +27,28 @@
             android:orientation="horizontal">
 
             <ImageView
-                android:layout_width="23dp"
-                android:layout_height="18dp"
+                android:layout_width="24dp"
+                android:layout_height="19dp"
                 android:layout_marginEnd="4dp"
                 android:contentDescription="معدودات"
                 android:scaleType="centerInside"
                 android:src="@drawable/numbered" />
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/the_year_of_handicrafts_bold"
-                android:text="الذكر"
-                android:textColor="#F4F7FB"
-                android:textSize="10sp" />
-
-            <TextView
                 android:id="@+id/dhikr_group"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_marginStart="5dp"
                 android:ellipsize="end"
-                android:fontFamily="@font/the_year_of_handicrafts_bold"
-                android:gravity="end"
+                android:gravity="end|center_vertical"
                 android:maxLines="1"
+                android:text="الذكر"
                 android:textColor="#8FB9E8"
                 android:textSize="9sp" />
 
         </LinearLayout>
 
-        <!-- نص الذكر -->
+        <!-- نص الذكر: الضغط عليه ينتقل للذكر التالي -->
         <TextView
             android:id="@+id/dhikr_text"
             android:layout_width="match_parent"
@@ -65,32 +56,21 @@
             android:layout_weight="1"
             android:layout_marginTop="2dp"
             android:ellipsize="end"
-            android:fontFamily="@font/the_year_of_handicrafts_bold"
             android:gravity="center"
-            android:maxLines="2"
+            android:maxLines="3"
             android:text="لا توجد بيانات متاحة"
             android:textColor="#F4F7FB"
             android:textDirection="rtl"
             android:textSize="11sp" />
 
+        <!-- عدد مرات الذكر -->
         <TextView
             android:id="@+id/dhikr_count_label"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/the_year_of_handicrafts_bold"
             android:gravity="center"
             android:maxLines="1"
             android:textColor="#AEB9C8"
-            android:textSize="8sp" />
-
-        <TextView
-            android:id="@+id/dhikr_progress"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/the_year_of_handicrafts_bold"
-            android:gravity="center"
-            android:maxLines="1"
-            android:textColor="#8995A6"
             android:textSize="8sp" />
 
     </LinearLayout>
@@ -99,68 +79,77 @@
     <LinearLayout
         android:layout_width="72dp"
         android:layout_height="match_parent"
-        android:gravity="center"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:gravity="center">
 
         <!-- تغيير المجموعة -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:gravity="center">
 
             <TextView
                 android:id="@+id/dhikr_group_previous"
-                android:layout_width="26dp"
-                android:layout_height="25dp"
+                android:layout_width="25dp"
+                android:layout_height="24dp"
                 android:background="@drawable/dhikr_widget_button"
-                android:fontFamily="@font/the_year_of_handicrafts_bold"
                 android:gravity="center"
-                android:text="«"
+                android:text="‹"
                 android:textColor="#DDE9FF"
-                android:textSize="13sp" />
+                android:textSize="15sp" />
 
             <TextView
                 android:id="@+id/dhikr_group_next"
-                android:layout_width="26dp"
-                android:layout_height="25dp"
+                android:layout_width="25dp"
+                android:layout_height="24dp"
                 android:layout_marginStart="3dp"
                 android:background="@drawable/dhikr_widget_button"
-                android:fontFamily="@font/the_year_of_handicrafts_bold"
                 android:gravity="center"
-                android:text="»"
+                android:text="›"
                 android:textColor="#DDE9FF"
-                android:textSize="13sp" />
+                android:textSize="15sp" />
 
         </LinearLayout>
 
-        <!-- العدد -->
+        <!-- رقم الذكر: الضغط عليه ينتقل للذكر التالي -->
         <TextView
-            android:id="@+id/dhikr_counter_card"
-            android:layout_width="42dp"
+            android:id="@+id/dhikr_progress"
+            android:layout_width="46dp"
             android:layout_height="27dp"
             android:layout_marginTop="3dp"
             android:background="@drawable/dhikr_widget_counter"
-            android:fontFamily="@font/the_year_of_handicrafts_bold"
+            android:gravity="center"
+            android:maxLines="1"
+            android:text="1 / 1"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp" />
+
+        <!-- عدد مرات التكرار -->
+        <TextView
+            android:id="@+id/dhikr_counter_card"
+            android:layout_width="46dp"
+            android:layout_height="23dp"
+            android:layout_marginTop="3dp"
+            android:background="@drawable/dhikr_widget_surface"
             android:gravity="center"
             android:maxLines="1"
             android:textColor="#FFFFFF"
-            android:textSize="12sp" />
+            android:textSize="9sp" />
 
-        <!-- الذكر السابق والتالي -->
+        <!-- السابق / التالي -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="3dp"
-            android:gravity="center"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:gravity="center">
 
             <TextView
                 android:id="@+id/dhikr_previous"
                 android:layout_width="27dp"
-                android:layout_height="25dp"
+                android:layout_height="24dp"
                 android:background="@drawable/dhikr_widget_button"
-                android:fontFamily="@font/the_year_of_handicrafts_bold"
                 android:gravity="center"
                 android:text="‹"
                 android:textColor="#DDE9FF"
@@ -169,10 +158,9 @@
             <TextView
                 android:id="@+id/dhikr_next"
                 android:layout_width="27dp"
-                android:layout_height="25dp"
+                android:layout_height="24dp"
                 android:layout_marginStart="3dp"
                 android:background="@drawable/dhikr_widget_button"
-                android:fontFamily="@font/the_year_of_handicrafts_bold"
                 android:gravity="center"
                 android:text="›"
                 android:textColor="#DDE9FF"
