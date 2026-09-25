@@ -11,6 +11,7 @@ import android.os.SystemClock
 import android.widget.RemoteViews
 import java.util.Calendar
 import java.util.TimeZone
+import kotlin.math.roundToInt
 
 class RemainingWidget : AppWidgetProvider() {
 
@@ -34,7 +35,10 @@ class RemainingWidget : AppWidgetProvider() {
         super.onDisabled(context)
     }
 
-    override fun onReceive(context: Context, intent: Intent) {
+    override fun onReceive(
+        context: Context,
+        intent: Intent
+    ) {
         super.onReceive(context, intent)
 
         when (intent.action) {
@@ -65,15 +69,25 @@ class RemainingWidget : AppWidgetProvider() {
             24L * MILLIS_PER_HOUR
 
         fun updateAll(context: Context) {
-            val manager = AppWidgetManager.getInstance(context)
-            val component = ComponentName(
-                context,
-                RemainingWidget::class.java
-            )
 
-            manager.getAppWidgetIds(component).forEach { widgetId ->
-                updateOne(context, manager, widgetId)
-            }
+            val manager =
+                AppWidgetManager.getInstance(context)
+
+            val component =
+                ComponentName(
+                    context,
+                    RemainingWidget::class.java
+                )
+
+            manager
+                .getAppWidgetIds(component)
+                .forEach { widgetId ->
+                    updateOne(
+                        context,
+                        manager,
+                        widgetId
+                    )
+                }
         }
 
         private fun updateOne(
@@ -81,15 +95,18 @@ class RemainingWidget : AppWidgetProvider() {
             manager: AppWidgetManager,
             widgetId: Int
         ) {
-            val views = RemoteViews(
-                context.packageName,
-                R.layout.widget_remaining
-            )
+
+            val views =
+                RemoteViews(
+                    context.packageName,
+                    R.layout.widget_remaining
+                )
+
+            val now =
+                System.currentTimeMillis()
 
             val event =
-                RemainingEventSchedule.nextUpcoming(
-                    System.currentTimeMillis()
-                )
+                RemainingEventSchedule.nextUpcoming(now)
 
             if (event == null) {
 
@@ -113,20 +130,69 @@ class RemainingWidget : AppWidgetProvider() {
                     "0"
                 )
 
+                views.setProgressBar(
+                    R.id.remaining_progress,
+                    100,
+                    100,
+                    false
+                )
+
             } else {
 
                 val remainingMillis =
                     (
-                        event.gregorianMillis -
-                            System.currentTimeMillis()
-                        ).coerceAtLeast(0L)
+                        event.gregorianMillis - now
+                    ).coerceAtLeast(0L)
 
                 val days =
                     remainingMillis / MILLIS_PER_DAY
 
                 val hours =
-                    (remainingMillis % MILLIS_PER_DAY) /
-                        MILLIS_PER_HOUR
+                    (
+                        remainingMillis %
+                            MILLIS_PER_DAY
+                    ) / MILLIS_PER_HOUR
+
+                /*
+                 * حساب نسبة التقدم الحقيقية
+                 *
+                 * من المناسبة السابقة إلى المناسبة الحالية.
+                 */
+                val previousEvent =
+                    RemainingEventSchedule.previousEvent(
+                        event.gregorianMillis
+                    )
+
+                val totalDuration =
+                    if (previousEvent != null) {
+                        (
+                            event.gregorianMillis -
+                                previousEvent.gregorianMillis
+                        ).coerceAtLeast(1L)
+                    } else {
+                        MILLIS_PER_DAY
+                    }
+
+                val elapsed =
+                    (
+                        now -
+                            (
+                                event.gregorianMillis -
+                                    totalDuration
+                            )
+                    ).coerceIn(
+                        0L,
+                        totalDuration
+                    )
+
+                val progress =
+                    (
+                        elapsed.toDouble() /
+                            totalDuration.toDouble() *
+                            100.0
+                    )
+                        .roundToInt()
+                        .coerceIn(0, 100)
 
                 views.setTextViewText(
                     R.id.remaining_event_name,
@@ -147,12 +213,57 @@ class RemainingWidget : AppWidgetProvider() {
                     R.id.remaining_hours,
                     hours.toString()
                 )
+
+                views.setProgressBar(
+                    R.id.remaining_progress,
+                    100,
+                    progress,
+                    false
+                )
             }
 
-            manager.updateAppWidget(widgetId, views)
+            /*
+             * تطبيق الخط المخصص على نصوص Widget المتبقي.
+             */
+            applyFont(
+                views,
+                R.id.remaining_event_name
+            )
+
+            applyFont(
+                views,
+                R.id.remaining_hijri_date
+            )
+
+            applyFont(
+                views,
+                R.id.remaining_days
+            )
+
+            applyFont(
+                views,
+                R.id.remaining_hours
+            )
+
+            manager.updateAppWidget(
+                widgetId,
+                views
+            )
         }
 
-        private fun scheduleRefresh(context: Context) {
+        private fun applyFont(
+            views: RemoteViews,
+            viewId: Int
+        ) {
+            views.setTextViewTextAppearance(
+                viewId,
+                R.style.WidgetTextAppearance
+            )
+        }
+
+        private fun scheduleRefresh(
+            context: Context
+        ) {
 
             val alarmManager =
                 context.getSystemService(
@@ -160,7 +271,10 @@ class RemainingWidget : AppWidgetProvider() {
                 ) as AlarmManager
 
             val intent =
-                Intent(context, RemainingWidget::class.java).apply {
+                Intent(
+                    context,
+                    RemainingWidget::class.java
+                ).apply {
                     action = ACTION_REFRESH
                 }
 
@@ -170,7 +284,7 @@ class RemainingWidget : AppWidgetProvider() {
                     REQUEST_CODE,
                     intent,
                     PendingIntent.FLAG_UPDATE_CURRENT or
-                        PendingIntent.FLAG_IMMUTABLE
+                            PendingIntent.FLAG_IMMUTABLE
                 )
 
             alarmManager.setInexactRepeating(
@@ -181,7 +295,9 @@ class RemainingWidget : AppWidgetProvider() {
             )
         }
 
-        private fun cancelRefresh(context: Context) {
+        private fun cancelRefresh(
+            context: Context
+        ) {
 
             val alarmManager =
                 context.getSystemService(
@@ -189,7 +305,10 @@ class RemainingWidget : AppWidgetProvider() {
                 ) as AlarmManager
 
             val intent =
-                Intent(context, RemainingWidget::class.java).apply {
+                Intent(
+                    context,
+                    RemainingWidget::class.java
+                ).apply {
                     action = ACTION_REFRESH
                 }
 
@@ -199,7 +318,7 @@ class RemainingWidget : AppWidgetProvider() {
                     REQUEST_CODE,
                     intent,
                     PendingIntent.FLAG_UPDATE_CURRENT or
-                        PendingIntent.FLAG_IMMUTABLE
+                            PendingIntent.FLAG_IMMUTABLE
                 )
 
             alarmManager.cancel(pendingIntent)
@@ -207,6 +326,9 @@ class RemainingWidget : AppWidgetProvider() {
     }
 }
 
+/*
+ * بيانات المناسبة
+ */
 private data class RemainingEvent(
     val name: String,
     val hijriDate: String,
@@ -214,58 +336,62 @@ private data class RemainingEvent(
     val gregorianMillis: Long
 )
 
+/*
+ * جدول المناسبات
+ */
 private object RemainingEventSchedule {
 
-    private val confirmedEvents = listOf(
+    private val confirmedEvents =
+        listOf(
 
-        RemainingEvent(
-            name = "رمضان المبارك",
-            hijriDate = "1 رمضان 1448هـ",
-            gregorianDate = "8 فبراير 2027م",
-            gregorianMillis =
-                localMidnightMillis(
-                    2027,
-                    Calendar.FEBRUARY,
-                    8
-                )
-        ),
+            RemainingEvent(
+                name = "رمضان المبارك",
+                hijriDate = "1 رمضان 1448هـ",
+                gregorianDate = "8 فبراير 2027م",
+                gregorianMillis =
+                    localMidnightMillis(
+                        2027,
+                        Calendar.FEBRUARY,
+                        8
+                    )
+            ),
 
-        RemainingEvent(
-            name = "عيد الفطر المبارك",
-            hijriDate = "1 شوال 1448هـ",
-            gregorianDate = "9 مارس 2027م",
-            gregorianMillis =
-                localMidnightMillis(
-                    2027,
-                    Calendar.MARCH,
-                    9
-                )
-        ),
+            RemainingEvent(
+                name = "عيد الفطر المبارك",
+                hijriDate = "1 شوال 1448هـ",
+                gregorianDate = "9 مارس 2027م",
+                gregorianMillis =
+                    localMidnightMillis(
+                        2027,
+                        Calendar.MARCH,
+                        9
+                    )
+            ),
 
-        RemainingEvent(
-            name = "عشر ذي الحجة",
-            hijriDate = "1 ذو الحجة 1448هـ",
-            gregorianDate = "7 مايو 2027م",
-            gregorianMillis =
-                localMidnightMillis(
-                    2027,
-                    Calendar.MAY,
-                    7
-                )
-        ),
+            RemainingEvent(
+                name = "عشر ذي الحجة",
+                hijriDate = "1 ذو الحجة 1448هـ",
+                gregorianDate = "7 مايو 2027م",
+                gregorianMillis =
+                    localMidnightMillis(
+                        2027,
+                        Calendar.MAY,
+                        7
+                    )
+            ),
 
-        RemainingEvent(
-            name = "عيد الأضحى المبارك",
-            hijriDate = "10 ذو الحجة 1448هـ",
-            gregorianDate = "16 مايو 2027م",
-            gregorianMillis =
-                localMidnightMillis(
-                    2027,
-                    Calendar.MAY,
-                    16
-                )
+            RemainingEvent(
+                name = "عيد الأضحى المبارك",
+                hijriDate = "10 ذو الحجة 1448هـ",
+                gregorianDate = "16 مايو 2027م",
+                gregorianMillis =
+                    localMidnightMillis(
+                        2027,
+                        Calendar.MAY,
+                        16
+                    )
+            )
         )
-    )
 
     fun nextUpcoming(
         nowMillis: Long
@@ -274,22 +400,36 @@ private object RemainingEventSchedule {
             it.gregorianMillis > nowMillis
         }
 
+    fun previousEvent(
+        eventMillis: Long
+    ): RemainingEvent? =
+        confirmedEvents
+            .filter {
+                it.gregorianMillis < eventMillis
+            }
+            .maxByOrNull {
+                it.gregorianMillis
+            }
+
     private fun localMidnightMillis(
         year: Int,
         month: Int,
         day: Int
     ): Long =
-        Calendar.getInstance(
-            TimeZone.getDefault()
-        ).apply {
-            clear()
-            set(
-                year,
-                month,
-                day,
-                0,
-                0,
-                0
+        Calendar
+            .getInstance(
+                TimeZone.getDefault()
             )
-        }.timeInMillis
+            .apply {
+                clear()
+                set(
+                    year,
+                    month,
+                    day,
+                    0,
+                    0,
+                    0
+                )
+            }
+            .timeInMillis
 }
