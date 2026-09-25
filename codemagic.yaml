@@ -10,7 +10,7 @@ workflows:
         script: |
           gradle wrapper
           chmod +x gradlew
-          ./gradlew assembleRelease
+          ./gradlew :app:assembleRelease
     artifacts:
       - app/build/outputs/apk/release/*.apk
     publishing:
