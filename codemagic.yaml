@@ -8,19 +8,21 @@ workflows:
     scripts:
       - name: Build Android APK
         script: |
-          # الانتقال لمجلد android إن وجد
-          if [ -d "android" ]; then cd android; fi
+          # البحث عن ملف build.gradle والدخول لمجلده تلقائياً أينما كان
+          BUILD_FILE=$(find . -maxdepth 3 -name "build.gradle" -o -name "build.gradle.kts" | head -n 1)
 
-          # إعطاء صلاحية التنفيذ للـ gradlew إن كان موجوداً
-          if [ -f "gradlew" ]; then
-            chmod +x gradlew
-            ./gradlew assembleRelease
+          if [ -n "$BUILD_FILE" ]; then
+            cd "$(dirname "$BUILD_FILE")"
+            echo "Working directory is: $(pwd)"
           else
-            echo "Gradlew not found, generating wrapper..."
-            gradle wrapper || android update project -p .
-            chmod +x gradlew
-            ./gradlew assembleRelease
+            echo "Error: No build.gradle file found in repository!"
+            exit 1
           fi
+
+          # إنشاء الـ wrapper إن لم يكن موجوداً ثم البناء
+          gradle wrapper
+          chmod +x gradlew
+          ./gradlew assembleRelease
     artifacts:
       - "**/build/outputs/apk/release/*.apk"
     publishing:
