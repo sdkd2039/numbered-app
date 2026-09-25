@@ -8,14 +8,22 @@ workflows:
     scripts:
       - name: Build Android APK
         script: |
+          # الانتقال للمجلد إذا كان المشروع داخل مجلد android
+          if [ -d "android" ]; then cd android; fi
+
+          # إذا لم يكن ملف gradlew موجوداً، يتم إنشاؤه تلقائياً بواسطة gradle المثبت في النظام
+          if [ ! -f "gradlew" ]; then
+            gradle wrapper
+          fi
+
           chmod +x gradlew
           ./gradlew assembleRelease
     artifacts:
-      - app/build/outputs/apk/release/*.apk
+      - "**/build/outputs/apk/release/*.apk"
     publishing:
       email:
         recipients:
           - sultan2021alamoudi@gmail.com
         notify:
-          failure: true   # إرسال إشعار عند فشل البناء
-          success: false  # إلغاء الإشعارات عند نجاح البناء (يمكنك تعديلها إلى true)
+          failure: true
+          success: false
