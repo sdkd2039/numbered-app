@@ -8,7 +8,7 @@
     android:padding="6dp"
     android:background="#1B1F26">
 
-    <!-- الشعار + اسم الحدث -->
+    <!-- العنوان -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -31,7 +31,6 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:ellipsize="end"
-            android:fontFamily="@font/the_year_of_handicrafts_bold"
             android:gravity="center_vertical|end"
             android:maxLines="1"
             android:textColor="#F4F7FB"
@@ -39,7 +38,7 @@
 
     </LinearLayout>
 
-    <!-- العداد -->
+    <!-- العد التنازلي -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -49,7 +48,7 @@
         android:orientation="horizontal"
         android:layoutDirection="rtl">
 
-        <!-- اليوم -->
+        <!-- الأيام -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
@@ -65,7 +64,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
-                android:fontFamily="@font/the_year_of_handicrafts_bold"
                 android:gravity="center"
                 android:maxLines="1"
                 android:text="0"
@@ -75,7 +73,6 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/the_year_of_handicrafts_bold"
                 android:gravity="center"
                 android:maxLines="1"
                 android:text="اليوم"
@@ -84,7 +81,7 @@
 
         </LinearLayout>
 
-        <!-- الساعة -->
+        <!-- الساعات -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
@@ -100,7 +97,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
-                android:fontFamily="@font/the_year_of_handicrafts_bold"
                 android:gravity="center"
                 android:maxLines="1"
                 android:text="0"
@@ -110,7 +106,6 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/the_year_of_handicrafts_bold"
                 android:gravity="center"
                 android:maxLines="1"
                 android:text="الساعة"
@@ -121,6 +116,19 @@
 
     </LinearLayout>
 
+    <!-- شريط التقدم -->
+    <ProgressBar
+        android:id="@+id/remaining_progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:layout_marginStart="3dp"
+        android:layout_marginEnd="3dp"
+        android:layout_marginTop="4dp"
+        android:max="100"
+        android:progress="0"
+        android:indeterminate="false" />
+
     <!-- التاريخ الهجري -->
     <TextView
         android:id="@+id/remaining_hijri_date"
@@ -128,7 +136,6 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="3dp"
         android:ellipsize="end"
-        android:fontFamily="@font/the_year_of_handicrafts_bold"
         android:gravity="center"
         android:maxLines="1"
         android:textColor="#8995A6"
