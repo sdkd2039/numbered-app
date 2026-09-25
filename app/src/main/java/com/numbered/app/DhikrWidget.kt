@@ -11,13 +11,11 @@ import android.widget.RemoteViews
 
 class DhikrWidget : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
-        ids.forEach { widgetId ->
-            render(context, widgetId, DhikrRepository.loadCached(context))
-        }
+        ids.forEach { widgetId -> render(context, widgetId, DhikrRepository.loadCached(context)) }
         DhikrRepository.refresh(context) { data ->
-            val appWidgetManager = AppWidgetManager.getInstance(context)
+            val managerAfterRefresh = AppWidgetManager.getInstance(context)
             val component = ComponentName(context, DhikrWidget::class.java)
-            appWidgetManager.getAppWidgetIds(component).forEach { widgetId ->
+            managerAfterRefresh.getAppWidgetIds(component).forEach { widgetId ->
                 render(context, widgetId, data)
             }
         }
@@ -32,10 +30,7 @@ class DhikrWidget : AppWidgetProvider() {
         if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return
 
         when (intent.action) {
-            ACTION_PREVIOUS,
-            ACTION_NEXT,
-            ACTION_GROUP_PREVIOUS,
-            ACTION_GROUP_NEXT -> {
+            ACTION_PREVIOUS, ACTION_NEXT, ACTION_GROUP_PREVIOUS, ACTION_GROUP_NEXT -> {
                 val data = DhikrRepository.loadCached(context)
                 if (data.isNotEmpty()) {
                     move(context, widgetId, data, intent.action!!)
@@ -58,28 +53,43 @@ class DhikrWidget : AppWidgetProvider() {
         private fun render(context: Context, widgetId: Int, data: List<DhikrEntry>) {
             val views = RemoteViews(context.packageName, R.layout.widget_dhikr)
             val groups = data.map { it.group }.distinct()
-            val state = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            val groupIndex = state.getInt(KEY_GROUP + widgetId, 0).coerceIn(0, (groups.size - 1).coerceAtLeast(0))
+            val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            val groupIndex = prefs.getInt(KEY_GROUP + widgetId, 0)
+                .coerceIn(0, (groups.size - 1).coerceAtLeast(0))
             val entries = data.filter { it.group == groups.getOrNull(groupIndex) }
-            val entryIndex = state.getInt(KEY_INDEX + widgetId, 0).coerceIn(0, (entries.size - 1).coerceAtLeast(0))
+            val entryIndex = prefs.getInt(KEY_INDEX + widgetId, 0)
+                .coerceIn(0, (entries.size - 1).coerceAtLeast(0))
             val entry = entries.getOrNull(entryIndex)
 
             views.setTextViewText(R.id.dhikr_group, entry?.group ?: "الذكر")
             views.setTextViewText(R.id.dhikr_text, entry?.text ?: "لا توجد بيانات محفوظة")
             views.setTextViewText(
-                R.id.dhikr_count,
+                R.id.dhikr_count_label,
                 entry?.count?.takeIf { it.isNotBlank() }?.let { "عدد المرات: $it" } ?: ""
             )
-            views.setViewVisibility(R.id.dhikr_group_previous, if (groups.size > 1) View.VISIBLE else View.GONE)
-            views.setViewVisibility(R.id.dhikr_group_next, if (groups.size > 1) View.VISIBLE else View.GONE)
+            views.setTextViewText(
+                R.id.dhikr_counter,
+                entry?.count?.takeIf { it.isNotBlank() } ?: ""
+            )
+            views.setTextViewText(
+                R.id.dhikr_progress,
+                if (entry != null) "${entryIndex + 1} / ${entries.size}" else ""
+            )
+
+            val hasData = entry != null
+            val hasGroups = groups.size > 1
+            views.setViewVisibility(R.id.dhikr_counter_card, if (hasData && !entry!!.count.isNullOrBlank()) View.VISIBLE else View.GONE)
+            views.setViewVisibility(R.id.dhikr_count_label, if (hasData && !entry!!.count.isNullOrBlank()) View.VISIBLE else View.GONE)
+            views.setViewVisibility(R.id.dhikr_group_previous, if (hasGroups) View.VISIBLE else View.GONE)
+            views.setViewVisibility(R.id.dhikr_group_next, if (hasGroups) View.VISIBLE else View.GONE)
+            views.setViewVisibility(R.id.dhikr_progress, if (hasData) View.VISIBLE else View.GONE)
 
             bind(views, context, widgetId, R.id.dhikr_previous, ACTION_PREVIOUS)
             bind(views, context, widgetId, R.id.dhikr_next, ACTION_NEXT)
             bind(views, context, widgetId, R.id.dhikr_group_previous, ACTION_GROUP_PREVIOUS)
             bind(views, context, widgetId, R.id.dhikr_group_next, ACTION_GROUP_NEXT)
 
-            val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
-            if (launchIntent != null) {
+            context.packageManager.getLaunchIntentForPackage(context.packageName)?.let { launchIntent ->
                 views.setOnClickPendingIntent(
                     R.id.dhikr_root,
                     PendingIntent.getActivity(
@@ -93,7 +103,13 @@ class DhikrWidget : AppWidgetProvider() {
             AppWidgetManager.getInstance(context).updateAppWidget(widgetId, views)
         }
 
-        private fun bind(views: RemoteViews, context: Context, widgetId: Int, viewId: Int, action: String) {
+        private fun bind(
+            views: RemoteViews,
+            context: Context,
+            widgetId: Int,
+            viewId: Int,
+            action: String
+        ) {
             val intent = Intent(context, DhikrWidget::class.java).apply {
                 this.action = action
                 putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
@@ -115,6 +131,7 @@ class DhikrWidget : AppWidgetProvider() {
             val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             var groupIndex = prefs.getInt(KEY_GROUP + widgetId, 0).coerceIn(0, groups.lastIndex)
             var entryIndex = prefs.getInt(KEY_INDEX + widgetId, 0)
+
             if (action == ACTION_GROUP_PREVIOUS || action == ACTION_GROUP_NEXT) {
                 val delta = if (action == ACTION_GROUP_NEXT) 1 else -1
                 groupIndex = (groupIndex + delta + groups.size) % groups.size
@@ -125,6 +142,7 @@ class DhikrWidget : AppWidgetProvider() {
                 val delta = if (action == ACTION_NEXT) 1 else -1
                 entryIndex = (entryIndex + delta + entries.size) % entries.size
             }
+
             prefs.edit()
                 .putInt(KEY_GROUP + widgetId, groupIndex)
                 .putInt(KEY_INDEX + widgetId, entryIndex)
