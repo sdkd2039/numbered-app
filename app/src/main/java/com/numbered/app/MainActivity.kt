@@ -259,7 +259,10 @@ class MainActivity : AppCompatActivity() {
         @Synchronized
         @JavascriptInterface
         fun retry() {
-            (context as? MainActivity)?.runOnUiThread { it.webView.loadUrl(it.homeUrl) }
+            val activity = context as? MainActivity ?: return
+            activity.runOnUiThread {
+                activity.webView.loadUrl(activity.homeUrl)
+            }
         }
 
         @Synchronized
