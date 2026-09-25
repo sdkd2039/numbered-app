@@ -1,32 +1,19 @@
 workflows:
-  android-workflow:
-    name: Android Build
+  android-native-build:
+    name: Build Numbered App (Android Native)
     max_build_duration: 30
     instance_type: mac_mini_m1
     environment:
-      flutter: stable
+      java: 17
     scripts:
-      - name: Build App Clean
+      - name: Build Android APK
         script: |
-          # 1. إزالة أي مجلد قديم
-          rm -rf android
-          
-          # 2. إنشاء مجلد أندرويد قياسي
-          flutter create . --org=com.numbered
-          
-          # 3. تغيير اسم التطبيق إلى "معدودات" بالعربي داخل AndroidManifest
-          sed -i '' 's/android:label=".*"/android:label="معدودات"/' android/app/src/main/AndroidManifest.xml
-          
-          # 4. تنزيل الأيقونة وتثبيتها
-          curl -sL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o android/app/src/main/res/mipmap-hdpi/ic_launcher.png
-          curl -sL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o android/app/src/main/res/mipmap-mdpi/ic_launcher.png
-          curl -sL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
-          curl -sL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
-          curl -sL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
-
-          # 5. البناء النهائي
-          flutter pub get
-          flutter build apk --release
-
+          chmod +x gradlew
+          ./gradlew assembleRelease
     artifacts:
-      - build/app/outputs/flutter-apk/*.apk
+      - app/build/outputs/apk/release/*.apk
+    publishing:
+      email:
+        recipients:
+          - sultan2021alamoudi@gmail.com # ضع إيميلك هنا ليصلك التنبيه
+        notify_on_build_failure: true
