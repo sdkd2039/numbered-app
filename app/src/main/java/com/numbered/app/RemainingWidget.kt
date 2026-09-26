@@ -9,9 +9,6 @@ import android.content.Context
 import android.content.Intent
 import android.view.View
 import android.widget.RemoteViews
-import java.util.Calendar
-import java.util.Locale
-import java.util.TimeZone
 import java.util.concurrent.TimeUnit
 
 class RemainingWidget : AppWidgetProvider() {
@@ -22,7 +19,10 @@ class RemainingWidget : AppWidgetProvider() {
         ids: IntArray
     ) {
         ids.forEach { widgetId ->
-            updateWidget(context, widgetId)
+            updateWidget(
+                context,
+                widgetId
+            )
         }
 
         scheduleNextUpdate(context)
@@ -32,7 +32,10 @@ class RemainingWidget : AppWidgetProvider() {
         context: Context,
         intent: Intent
     ) {
-        super.onReceive(context, intent)
+        super.onReceive(
+            context,
+            intent
+        )
 
         when (intent.action) {
 
@@ -42,7 +45,9 @@ class RemainingWidget : AppWidgetProvider() {
             ACTION_REFRESH -> {
 
                 val manager =
-                    AppWidgetManager.getInstance(context)
+                    AppWidgetManager.getInstance(
+                        context
+                    )
 
                 val component =
                     ComponentName(
@@ -53,6 +58,7 @@ class RemainingWidget : AppWidgetProvider() {
                 manager
                     .getAppWidgetIds(component)
                     .forEach { widgetId ->
+
                         updateWidget(
                             context,
                             widgetId
@@ -89,25 +95,15 @@ class RemainingWidget : AppWidgetProvider() {
                     R.layout.widget_remaining
                 )
 
-            /*
-             * خط Zain يتم تطبيقه من خلال
-             * widget_remaining.xml
-             * ولا نستخدم RemoteViews.setTextViewTextAppearance()
-             * لأنها غير متاحة هنا.
-             */
-
             val now =
                 System.currentTimeMillis()
 
-            /*
-             * البحث عن أقرب مناسبة قادمة.
-             */
             val nextEvent =
-                RemainingEventSchedule.nextUpcoming(now)
+                RemainingRepository.nextUpcoming(
+                    context,
+                    now
+                )
 
-            /*
-             * لا توجد مناسبة قادمة.
-             */
             if (nextEvent == null) {
 
                 views.setTextViewText(
@@ -172,9 +168,6 @@ class RemainingWidget : AppWidgetProvider() {
                 return
             }
 
-            /*
-             * حساب الوقت المتبقي.
-             */
             val remainingMillis =
                 (
                     nextEvent.gregorianMillis - now
@@ -182,51 +175,42 @@ class RemainingWidget : AppWidgetProvider() {
 
             val days =
                 TimeUnit.MILLISECONDS
-                    .toDays(remainingMillis)
+                    .toDays(
+                        remainingMillis
+                    )
 
             val hours =
                 TimeUnit.MILLISECONDS
-                    .toHours(remainingMillis) % 24L
+                    .toHours(
+                        remainingMillis
+                    ) % 24L
 
             val minutes =
                 TimeUnit.MILLISECONDS
-                    .toMinutes(remainingMillis) % 60L
+                    .toMinutes(
+                        remainingMillis
+                    ) % 60L
 
-            /*
-             * عرض اسم المناسبة.
-             */
             views.setTextViewText(
                 R.id.remaining_event_name,
                 nextEvent.name
             )
 
-            /*
-             * عرض الأيام.
-             */
             views.setTextViewText(
                 R.id.remaining_days,
                 days.toString()
             )
 
-            /*
-             * عرض الساعات.
-             */
             views.setTextViewText(
                 R.id.remaining_hours,
                 hours.toString()
             )
 
-            /*
-             * عرض الدقائق.
-             */
             views.setTextViewText(
                 R.id.remaining_minutes,
                 minutes.toString()
             )
 
-            /*
-             * عرض التاريخ.
-             */
             views.setTextViewText(
                 R.id.remaining_hijri_date,
                 "${nextEvent.hijriDate} | ${nextEvent.gregorianDate}"
@@ -247,12 +231,9 @@ class RemainingWidget : AppWidgetProvider() {
                 View.VISIBLE
             )
 
-            /*
-             * حساب نسبة التقدم بين المناسبة السابقة
-             * والمناسبة القادمة.
-             */
             val previousEvent =
-                RemainingEventSchedule.previousEvent(
+                RemainingRepository.previousEvent(
+                    context,
                     nextEvent
                 )
 
@@ -270,9 +251,6 @@ class RemainingWidget : AppWidgetProvider() {
                 false
             )
 
-            /*
-             * الضغط على الويدجت يفتح التطبيق.
-             */
             setOpenAppAction(
                 context,
                 widgetId,
@@ -331,10 +309,6 @@ class RemainingWidget : AppWidgetProvider() {
             nowMillis: Long
         ): Int {
 
-            /*
-             * إذا لم توجد مناسبة سابقة،
-             * لا نستطيع حساب النسبة.
-             */
             if (previousMillis == null) {
                 return 0
             }
@@ -356,9 +330,9 @@ class RemainingWidget : AppWidgetProvider() {
 
             val progress =
                 (
-                    elapsedDuration.toDouble()
-                        / totalDuration.toDouble()
-                        * 100.0
+                    elapsedDuration.toDouble() /
+                        totalDuration.toDouble() *
+                        100.0
                 ).toInt()
 
             return progress.coerceIn(
@@ -375,7 +349,10 @@ class RemainingWidget : AppWidgetProvider() {
                 System.currentTimeMillis()
 
             val nextEvent =
-                RemainingEventSchedule.nextUpcoming(now)
+                RemainingRepository.nextUpcoming(
+                    context,
+                    now
+                )
 
             val remaining =
                 nextEvent?.let {
@@ -384,10 +361,6 @@ class RemainingWidget : AppWidgetProvider() {
                     ).coerceAtLeast(0L)
                 }
 
-            /*
-             * خلال آخر يوم يتم التحديث كل دقيقة.
-             * قبل ذلك يتم التحديث كل 30 دقيقة.
-             */
             val interval =
                 if (
                     remaining != null &&
@@ -403,7 +376,8 @@ class RemainingWidget : AppWidgetProvider() {
                     context,
                     RemainingWidget::class.java
                 ).apply {
-                    action = ACTION_REFRESH
+                    action =
+                        ACTION_REFRESH
                 }
 
             val pendingIntent =
@@ -421,7 +395,8 @@ class RemainingWidget : AppWidgetProvider() {
                 ) as AlarmManager
 
             val triggerAt =
-                System.currentTimeMillis() + interval
+                System.currentTimeMillis() +
+                    interval
 
             alarmManager.setAndAllowWhileIdle(
                 AlarmManager.RTC,
@@ -429,129 +404,5 @@ class RemainingWidget : AppWidgetProvider() {
                 pendingIntent
             )
         }
-    }
-}
-
-data class RemainingEvent(
-    val name: String,
-    val hijriDate: String,
-    val gregorianDate: String,
-    val gregorianMillis: Long
-)
-
-object RemainingEventSchedule {
-
-    private val timeZone =
-        TimeZone.getTimeZone("Asia/Riyadh")
-
-    private val locale =
-        Locale("ar", "SA")
-
-    private fun dateMillis(
-        year: Int,
-        month: Int,
-        day: Int
-    ): Long {
-
-        val calendar =
-            Calendar.getInstance(
-                timeZone,
-                locale
-            )
-
-        calendar.clear()
-
-        calendar.set(
-            year,
-            month - 1,
-            day,
-            0,
-            0,
-            0
-        )
-
-        return calendar.timeInMillis
-    }
-
-    private val events =
-        listOf(
-
-            RemainingEvent(
-                name = "عيد الأضحى المبارك",
-                hijriDate = "10 ذو الحجة 1447هـ",
-                gregorianDate = "27 مايو 2026م",
-                gregorianMillis = dateMillis(
-                    2026,
-                    5,
-                    27
-                )
-            ),
-
-            RemainingEvent(
-                name = "شهر رمضان المبارك",
-                hijriDate = "1 رمضان 1448هـ",
-                gregorianDate = "8 فبراير 2027م",
-                gregorianMillis = dateMillis(
-                    2027,
-                    2,
-                    8
-                )
-            ),
-
-            RemainingEvent(
-                name = "عيد الفطر المبارك",
-                hijriDate = "1 شوال 1448هـ",
-                gregorianDate = "9 مارس 2027م",
-                gregorianMillis = dateMillis(
-                    2027,
-                    3,
-                    9
-                )
-            ),
-
-            RemainingEvent(
-                name = "عشر ذي الحجة",
-                hijriDate = "1 ذو الحجة 1448هـ",
-                gregorianDate = "7 مايو 2027م",
-                gregorianMillis = dateMillis(
-                    2027,
-                    5,
-                    7
-                )
-            ),
-
-            RemainingEvent(
-                name = "عيد الأضحى المبارك",
-                hijriDate = "10 ذو الحجة 1448هـ",
-                gregorianDate = "16 مايو 2027م",
-                gregorianMillis = dateMillis(
-                    2027,
-                    5,
-                    16
-                )
-            )
-        )
-
-    fun nextUpcoming(
-        nowMillis: Long
-    ): RemainingEvent? {
-
-        return events.firstOrNull {
-            it.gregorianMillis > nowMillis
-        }
-    }
-
-    fun previousEvent(
-        nextEvent: RemainingEvent
-    ): RemainingEvent? {
-
-        val index =
-            events.indexOf(nextEvent)
-
-        if (index <= 0) {
-            return null
-        }
-
-        return events[index - 1]
     }
 }
