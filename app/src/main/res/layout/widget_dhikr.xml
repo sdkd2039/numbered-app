@@ -32,9 +32,9 @@
             android:layout_weight="1"
             android:gravity="center_vertical|start"
             android:text="الصباح"
-            android:textAppearance="@style/WidgetZainTextAppearance"
+            android:fontFamily="@font/zain_bold"
             android:textColor="#FFFFFF"
-            android:textSize="30sp"
+            android:textSize="13sp"
             android:maxLines="1"
             android:ellipsize="end" />
 
@@ -109,7 +109,6 @@
         android:gravity="center"
         android:layoutDirection="rtl">
 
-        <!-- السابق أصبح في الجهة الأولى -->
         <TextView
             android:id="@+id/dhikr_previous"
             android:layout_width="0dp"
@@ -138,10 +137,10 @@
             android:textSize="11sp"
             android:background="@drawable/dhikr_button_background" />
 
-        <!-- التالي أصبح في الجهة الأخيرة -->
         <TextView
             android:id="@+id/dhikr_next"
             android:layout_width="0dp"
+            android:layout_height="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:layout_marginStart="2dp"
