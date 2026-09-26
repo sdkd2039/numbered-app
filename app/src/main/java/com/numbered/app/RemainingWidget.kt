@@ -90,13 +90,12 @@ class RemainingWidget : AppWidgetProvider() {
                 )
 
             /*
-             * الخط يتم تطبيقه من widget_remaining.xml
-             * عن طريق WidgetZainTextAppearance.
+             * خط Zain يتم تطبيقه من خلال
+             * widget_remaining.xml
+             * ولا نستخدم RemoteViews.setTextViewTextAppearance()
+             * لأنها غير متاحة هنا.
              */
 
-            /*
-             * الوقت الحقيقي الحالي من الجهاز.
-             */
             val now =
                 System.currentTimeMillis()
 
@@ -158,6 +157,12 @@ class RemainingWidget : AppWidgetProvider() {
                     false
                 )
 
+                setOpenAppAction(
+                    context,
+                    widgetId,
+                    views
+                )
+
                 updateAppWidget(
                     context,
                     widgetId,
@@ -168,17 +173,13 @@ class RemainingWidget : AppWidgetProvider() {
             }
 
             /*
-             * الفرق الحقيقي بين الآن وموعد المناسبة.
+             * حساب الوقت المتبقي.
              */
             val remainingMillis =
                 (
                     nextEvent.gregorianMillis - now
                 ).coerceAtLeast(0L)
 
-            /*
-             * أيام + ساعات + دقائق فقط.
-             * لا توجد ثواني.
-             */
             val days =
                 TimeUnit.MILLISECONDS
                     .toDays(remainingMillis)
@@ -192,7 +193,7 @@ class RemainingWidget : AppWidgetProvider() {
                     .toMinutes(remainingMillis) % 60L
 
             /*
-             * اسم المناسبة.
+             * عرض اسم المناسبة.
              */
             views.setTextViewText(
                 R.id.remaining_event_name,
@@ -200,7 +201,7 @@ class RemainingWidget : AppWidgetProvider() {
             )
 
             /*
-             * الأيام.
+             * عرض الأيام.
              */
             views.setTextViewText(
                 R.id.remaining_days,
@@ -208,7 +209,7 @@ class RemainingWidget : AppWidgetProvider() {
             )
 
             /*
-             * الساعات.
+             * عرض الساعات.
              */
             views.setTextViewText(
                 R.id.remaining_hours,
@@ -216,7 +217,7 @@ class RemainingWidget : AppWidgetProvider() {
             )
 
             /*
-             * الدقائق.
+             * عرض الدقائق.
              */
             views.setTextViewText(
                 R.id.remaining_minutes,
@@ -224,16 +225,13 @@ class RemainingWidget : AppWidgetProvider() {
             )
 
             /*
-             * التاريخ.
+             * عرض التاريخ.
              */
             views.setTextViewText(
                 R.id.remaining_hijri_date,
                 "${nextEvent.hijriDate} | ${nextEvent.gregorianDate}"
             )
 
-            /*
-             * عرض الأيام والساعات والدقائق دائمًا.
-             */
             views.setViewVisibility(
                 R.id.remaining_days_box,
                 View.VISIBLE
@@ -250,16 +248,14 @@ class RemainingWidget : AppWidgetProvider() {
             )
 
             /*
-             * المناسبة السابقة.
+             * حساب نسبة التقدم بين المناسبة السابقة
+             * والمناسبة القادمة.
              */
             val previousEvent =
                 RemainingEventSchedule.previousEvent(
                     nextEvent
                 )
 
-            /*
-             * حساب شريط التقدم.
-             */
             val progress =
                 calculateProgress(
                     previousEvent?.gregorianMillis,
@@ -267,9 +263,6 @@ class RemainingWidget : AppWidgetProvider() {
                     now
                 )
 
-            /*
-             * تحديث شريط التقدم.
-             */
             views.setProgressBar(
                 R.id.remaining_progress,
                 100,
@@ -280,6 +273,25 @@ class RemainingWidget : AppWidgetProvider() {
             /*
              * الضغط على الويدجت يفتح التطبيق.
              */
+            setOpenAppAction(
+                context,
+                widgetId,
+                views
+            )
+
+            updateAppWidget(
+                context,
+                widgetId,
+                views
+            )
+        }
+
+        private fun setOpenAppAction(
+            context: Context,
+            widgetId: Int,
+            views: RemoteViews
+        ) {
+
             context.packageManager
                 .getLaunchIntentForPackage(
                     context.packageName
@@ -297,17 +309,8 @@ class RemainingWidget : AppWidgetProvider() {
                         )
                     )
                 }
-
-            updateAppWidget(
-                context,
-                widgetId,
-                views
-            )
         }
 
-        /*
-         * تحديث الويدجت.
-         */
         private fun updateAppWidget(
             context: Context,
             widgetId: Int,
@@ -322,16 +325,16 @@ class RemainingWidget : AppWidgetProvider() {
                 )
         }
 
-        /*
-         * حساب نسبة التقدم من المناسبة السابقة
-         * حتى المناسبة الحالية.
-         */
         private fun calculateProgress(
             previousMillis: Long?,
             nextMillis: Long,
             nowMillis: Long
         ): Int {
 
+            /*
+             * إذا لم توجد مناسبة سابقة،
+             * لا نستطيع حساب النسبة.
+             */
             if (previousMillis == null) {
                 return 0
             }
@@ -364,9 +367,6 @@ class RemainingWidget : AppWidgetProvider() {
             )
         }
 
-        /*
-         * جدولة التحديث القادم.
-         */
         private fun scheduleNextUpdate(
             context: Context
         ) {
@@ -385,8 +385,8 @@ class RemainingWidget : AppWidgetProvider() {
                 }
 
             /*
-             * أقل من 24 ساعة = تحديث كل دقيقة.
-             * أكثر من ذلك = تحديث كل 30 دقيقة.
+             * خلال آخر يوم يتم التحديث كل دقيقة.
+             * قبل ذلك يتم التحديث كل 30 دقيقة.
              */
             val interval =
                 if (
@@ -432,10 +432,6 @@ class RemainingWidget : AppWidgetProvider() {
     }
 }
 
-
-/*
- * بيانات المناسبات.
- */
 data class RemainingEvent(
     val name: String,
     val hijriDate: String,
@@ -443,23 +439,14 @@ data class RemainingEvent(
     val gregorianMillis: Long
 )
 
-
 object RemainingEventSchedule {
 
-    /*
-     * توقيت المملكة العربية السعودية.
-     */
     private val timeZone =
         TimeZone.getTimeZone("Asia/Riyadh")
 
     private val locale =
         Locale("ar", "SA")
 
-    /*
-     * تحويل التاريخ إلى milliseconds.
-     *
-     * الساعة 00:00:00 بتوقيت الرياض.
-     */
     private fun dateMillis(
         year: Int,
         month: Int,
@@ -486,16 +473,9 @@ object RemainingEventSchedule {
         return calendar.timeInMillis
     }
 
-    /*
-     * المناسبات.
-     */
     private val events =
         listOf(
 
-            /*
-             * آخر مناسبة سابقة.
-             * تستخدم فقط لحساب شريط التقدم.
-             */
             RemainingEvent(
                 name = "عيد الأضحى المبارك",
                 hijriDate = "10 ذو الحجة 1447هـ",
@@ -507,9 +487,6 @@ object RemainingEventSchedule {
                 )
             ),
 
-            /*
-             * رمضان 2027.
-             */
             RemainingEvent(
                 name = "شهر رمضان المبارك",
                 hijriDate = "1 رمضان 1448هـ",
@@ -521,9 +498,6 @@ object RemainingEventSchedule {
                 )
             ),
 
-            /*
-             * عيد الفطر 2027.
-             */
             RemainingEvent(
                 name = "عيد الفطر المبارك",
                 hijriDate = "1 شوال 1448هـ",
@@ -535,9 +509,6 @@ object RemainingEventSchedule {
                 )
             ),
 
-            /*
-             * عشر ذي الحجة 2027.
-             */
             RemainingEvent(
                 name = "عشر ذي الحجة",
                 hijriDate = "1 ذو الحجة 1448هـ",
@@ -549,9 +520,6 @@ object RemainingEventSchedule {
                 )
             ),
 
-            /*
-             * عيد الأضحى 2027.
-             */
             RemainingEvent(
                 name = "عيد الأضحى المبارك",
                 hijriDate = "10 ذو الحجة 1448هـ",
@@ -564,9 +532,6 @@ object RemainingEventSchedule {
             )
         )
 
-    /*
-     * أقرب مناسبة قادمة.
-     */
     fun nextUpcoming(
         nowMillis: Long
     ): RemainingEvent? {
@@ -576,9 +541,6 @@ object RemainingEventSchedule {
         }
     }
 
-    /*
-     * المناسبة السابقة للمناسبة القادمة.
-     */
     fun previousEvent(
         nextEvent: RemainingEvent
     ): RemainingEvent? {
