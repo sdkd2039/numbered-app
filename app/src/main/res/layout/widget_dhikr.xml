@@ -1,195 +1,126 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/dhikr_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     android:layoutDirection="rtl"
-    android:orientation="horizontal"
-    android:gravity="center_vertical"
-    android:background="@drawable/dhikr_widget_background"
-    android:padding="6dp">
+    android:padding="10dp"
+    android:background="@drawable/dhikr_widget_background">
 
-    <!-- محتوى الذكر -->
-    <LinearLayout
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
+    <TextView
+        android:id="@+id/dhikr_category"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="أذكار الصباح"
+        android:textColor="#DCE8F5"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/dhikr_text"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
         android:layout_weight="1"
+        android:layout_marginTop="5dp"
+        android:gravity="center"
+        android:text="جارٍ تحميل الذكر..."
+        android:textColor="#FFFFFF"
+        android:textSize="15sp"
+        android:lineSpacingExtra="3dp"
+        android:maxLines="5"
+        android:ellipsize="end" />
+
+    <LinearLayout
+        android:id="@+id/dhikr_counter_area"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
         android:orientation="vertical"
-        android:gravity="center_vertical"
-        android:paddingStart="5dp"
-        android:paddingEnd="5dp">
+        android:clickable="true"
+        android:focusable="true"
+        android:paddingTop="3dp"
+        android:paddingBottom="4dp">
 
-        <!-- العنوان -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="19dp"
-                android:layout_marginEnd="4dp"
-                android:contentDescription="معدودات"
-                android:scaleType="centerInside"
-                android:src="@drawable/male" />
-
-            <TextView
-                android:id="@+id/dhikr_group"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:ellipsize="end"
-                android:gravity="end|center_vertical"
-                android:maxLines="1"
-                android:textAppearance="@style/WidgetZainTextAppearance"
-                android:text="الذكر"
-                android:textColor="#8FB9E8"
-                android:textSize="9sp" />
-        </LinearLayout>
-
-        <!-- نص الذكر -->
         <TextView
-            android:id="@+id/dhikr_text"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
+            android:id="@+id/dhikr_count"
+            android:layout_width="64dp"
+            android:layout_height="44dp"
+            android:gravity="center"
+            android:background="@drawable/dhikr_counter_background"
+            android:text="0"
+            android:textColor="#FFFFFF"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/dhikr_target"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
-            android:ellipsize="end"
-            android:gravity="center"
-            android:maxLines="3"
-            android:textAppearance="@style/WidgetZainTextAppearance"
-            android:text="لا توجد بيانات متاحة"
-            android:textColor="#F4F7FB"
-            android:textDirection="rtl"
-            android:textSize="11sp" />
-
-        <!-- العدد المطلوب -->
-        <TextView
-            android:id="@+id/dhikr_count_label"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:maxLines="1"
-            android:textAppearance="@style/WidgetZainTextAppearance"
-            android:textColor="#AEB9C8"
-            android:textSize="8sp" />
+            android:text="من 0"
+            android:textColor="#AEBBCC"
+            android:textSize="9sp" />
 
     </LinearLayout>
 
-    <!-- لوحة التحكم -->
+    <ProgressBar
+        android:id="@+id/dhikr_progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:max="100"
+        android:progress="0"
+        android:indeterminate="false"
+        android:progressTint="#62A9F5"
+        android:layout_marginBottom="7dp" />
+
     <LinearLayout
-        android:layout_width="72dp"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:gravity="center">
+        android:layout_width="match_parent"
+        android:layout_height="38dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layoutDirection="rtl">
 
-        <!-- تغيير المجموعة -->
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center">
-
-            <TextView
-                android:id="@+id/dhikr_group_previous"
-                android:layout_width="25dp"
-                android:layout_height="24dp"
-                android:background="@drawable/dhikr_widget_button"
-                android:textAppearance="@style/WidgetZainTextAppearance"
-                android:gravity="center"
-                android:text="‹"
-                android:textColor="#DDE9FF"
-                android:textSize="15sp" />
-
-            <TextView
-                android:id="@+id/dhikr_group_next"
-                android:layout_width="25dp"
-                android:layout_height="24dp"
-                android:layout_marginStart="3dp"
-                android:background="@drawable/dhikr_widget_button"
-                android:textAppearance="@style/WidgetZainTextAppearance"
-                android:gravity="center"
-                android:text="›"
-                android:textColor="#DDE9FF"
-                android:textSize="15sp" />
-
-        </LinearLayout>
-
-        <!-- ترتيب الذكر -->
         <TextView
-            android:id="@+id/dhikr_progress"
-            android:layout_width="46dp"
-            android:layout_height="27dp"
-            android:layout_marginTop="3dp"
-            android:background="@drawable/dhikr_widget_counter"
-            android:textAppearance="@style/WidgetZainTextAppearance"
+            android:id="@+id/dhikr_next"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
             android:gravity="center"
-            android:maxLines="1"
-            android:text="1 / 1"
+            android:text="التالي"
             android:textColor="#FFFFFF"
-            android:textSize="10sp" />
+            android:textSize="11sp"
+            android:background="@drawable/dhikr_button_background" />
 
-        <!-- العداد -->
-        <TextView
-            android:id="@+id/dhikr_counter_card"
-            android:layout_width="46dp"
-            android:layout_height="23dp"
-            android:layout_marginTop="3dp"
-            android:background="@drawable/dhikr_widget_surface"
-            android:textAppearance="@style/WidgetZainTextAppearance"
-            android:gravity="center"
-            android:maxLines="1"
-            android:text="0 / 0"
-            android:textColor="#FFFFFF"
-            android:textSize="9sp" />
-
-        <!-- إعادة العداد -->
         <TextView
             android:id="@+id/dhikr_reset"
-            android:layout_width="46dp"
-            android:layout_height="22dp"
-            android:layout_marginTop="3dp"
-            android:background="@drawable/dhikr_widget_button"
-            android:textAppearance="@style/WidgetZainTextAppearance"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
             android:gravity="center"
-            android:maxLines="1"
-            android:text="إعادة"
+            android:text="تصفير"
             android:textColor="#FFFFFF"
-            android:textSize="8sp" />
+            android:textSize="11sp"
+            android:background="@drawable/dhikr_button_background" />
 
-        <!-- السابق / التالي -->
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="3dp"
-            android:orientation="horizontal"
-            android:gravity="center">
-
-            <TextView
-                android:id="@+id/dhikr_previous"
-                android:layout_width="27dp"
-                android:layout_height="24dp"
-                android:background="@drawable/dhikr_widget_button"
-                android:textAppearance="@style/WidgetZainTextAppearance"
-                android:gravity="center"
-                android:text="‹"
-                android:textColor="#DDE9FF"
-                android:textSize="17sp" />
-
-            <TextView
-                android:id="@+id/dhikr_next"
-                android:layout_width="27dp"
-                android:layout_height="24dp"
-                android:layout_marginStart="3dp"
-                android:background="@drawable/dhikr_widget_button"
-                android:textAppearance="@style/WidgetZainTextAppearance"
-                android:gravity="center"
-                android:text="›"
-                android:textColor="#DDE9FF"
-                android:textSize="17sp" />
-
-        </LinearLayout>
+        <TextView
+            android:id="@+id/dhikr_previous"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:gravity="center"
+            android:text="السابق"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp"
+            android:background="@drawable/dhikr_button_background" />
 
     </LinearLayout>
 
