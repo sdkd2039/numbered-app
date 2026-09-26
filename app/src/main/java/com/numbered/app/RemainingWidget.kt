@@ -1,17 +1,19 @@
 package com.numbered.app
 
+import android.app.AlarmManager
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.os.SystemClock
+import android.view.View
 import android.widget.RemoteViews
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import java.util.TimeZone
+import java.util.concurrent.TimeUnit
 
 class RemainingWidget : AppWidgetProvider() {
 
@@ -34,19 +36,29 @@ class RemainingWidget : AppWidgetProvider() {
         super.onReceive(context, intent)
 
         when (intent.action) {
+
             Intent.ACTION_DATE_CHANGED,
             Intent.ACTION_TIME_CHANGED,
             Intent.ACTION_TIMEZONE_CHANGED,
             ACTION_REFRESH -> {
-                val manager = AppWidgetManager.getInstance(context)
-                val component = ComponentName(
-                    context,
-                    RemainingWidget::class.java
-                )
 
-                manager.getAppWidgetIds(component).forEach { widgetId ->
-                    updateWidget(context, widgetId)
-                }
+                val manager =
+                    AppWidgetManager.getInstance(context)
+
+                val component =
+                    ComponentName(
+                        context,
+                        RemainingWidget::class.java
+                    )
+
+                manager
+                    .getAppWidgetIds(component)
+                    .forEach { widgetId ->
+                        updateWidget(
+                            context,
+                            widgetId
+                        )
+                    }
 
                 scheduleNextUpdate(context)
             }
@@ -58,25 +70,51 @@ class RemainingWidget : AppWidgetProvider() {
         private const val ACTION_REFRESH =
             "com.numbered.app.action.REMAINING_REFRESH"
 
-        private const val UPDATE_INTERVAL =
+        /*
+         * تحديث عادي كل 30 دقيقة عندما تكون المناسبة بعيدة.
+         */
+        private const val NORMAL_UPDATE_INTERVAL =
             30L * 60L * 1000L
 
-        private val ARABIC_LOCALE =
-            Locale("ar", "SA")
+        /*
+         * عندما تصبح المناسبة خلال 24 ساعة،
+         * نطلب تحديثًا كل دقيقة.
+         */
+        private const val FAST_UPDATE_INTERVAL =
+            60L * 1000L
+
+        private const val ONE_DAY =
+            24L * 60L * 60L * 1000L
 
         private fun updateWidget(
             context: Context,
             widgetId: Int
         ) {
-            val views = RemoteViews(
-                context.packageName,
-                R.layout.widget_remaining
-            )
 
-            val now = System.currentTimeMillis()
-            val nextEvent = RemainingEventSchedule.nextUpcoming(now)
+            val views =
+                RemoteViews(
+                    context.packageName,
+                    R.layout.widget_remaining
+                )
+
+            /*
+             * مهم:
+             *
+             * نقرأ ساعة الجهاز في نفس لحظة الحساب.
+             * لا نعتمد على عداد ينقص كل دقيقة.
+             *
+             * لذلك حتى لو تأخر Android في تشغيل التحديث،
+             * عند التحديث التالي سيُعاد حساب الوقت الحقيقي.
+             */
+            val now =
+                System.currentTimeMillis()
+
+            val nextEvent =
+                RemainingEventSchedule
+                    .nextUpcoming(now)
 
             if (nextEvent == null) {
+
                 views.setTextViewText(
                     R.id.remaining_event_name,
                     "لا توجد مناسبة قادمة"
@@ -93,8 +131,32 @@ class RemainingWidget : AppWidgetProvider() {
                 )
 
                 views.setTextViewText(
+                    R.id.remaining_minutes,
+                    "0"
+                )
+
+                views.setTextViewText(
                     R.id.remaining_hijri_date,
                     ""
+                )
+
+                /*
+                 * عند عدم وجود مناسبة:
+                 * نخفي الأيام والساعات ونترك الدقائق ظاهرة.
+                 */
+                views.setViewVisibility(
+                    R.id.remaining_days_box,
+                    View.GONE
+                )
+
+                views.setViewVisibility(
+                    R.id.remaining_hours_box,
+                    View.GONE
+                )
+
+                views.setViewVisibility(
+                    R.id.remaining_minutes_box,
+                    View.VISIBLE
                 )
 
                 views.setProgressBar(
@@ -104,24 +166,40 @@ class RemainingWidget : AppWidgetProvider() {
                     false
                 )
 
-                AppWidgetManager.getInstance(context)
-                    .updateAppWidget(widgetId, views)
+                updateAppWidget(
+                    context,
+                    widgetId,
+                    views
+                )
 
                 return
             }
 
+            /*
+             * الوقت المتبقي الحقيقي بالملي ثانية.
+             */
             val remainingMillis =
-                (nextEvent.gregorianMillis - now)
-                    .coerceAtLeast(0L)
+                (
+                    nextEvent.gregorianMillis -
+                        now
+                    ).coerceAtLeast(0L)
 
-            val totalHours =
-                remainingMillis / (60L * 60L * 1000L)
+            /*
+             * نحسب كل وحدة من نفس القيمة.
+             * لا يوجد عداد داخلي يمكن أن يتأخر عن ساعة الجوال.
+             */
+            val totalMinutes =
+                TimeUnit.MILLISECONDS
+                    .toMinutes(remainingMillis)
 
             val days =
-                totalHours / 24L
+                totalMinutes / 1440L
 
             val hours =
-                totalHours % 24L
+                (totalMinutes % 1440L) / 60L
+
+            val minutes =
+                totalMinutes % 60L
 
             views.setTextViewText(
                 R.id.remaining_event_name,
@@ -139,15 +217,93 @@ class RemainingWidget : AppWidgetProvider() {
             )
 
             views.setTextViewText(
+                R.id.remaining_minutes,
+                minutes.toString()
+            )
+
+            views.setTextViewText(
                 R.id.remaining_hijri_date,
                 "${nextEvent.hijriDate} | ${nextEvent.gregorianDate}"
             )
 
+            /*
+             * التصميم الديناميكي:
+             *
+             * 3 وحدات:
+             * أيام | ساعات | دقائق
+             *
+             * إذا الأيام = 0:
+             * ساعات | دقائق
+             *
+             * إذا الأيام والساعات = 0:
+             * دقائق فقط
+             */
+            when {
+
+                days > 0L -> {
+
+                    views.setViewVisibility(
+                        R.id.remaining_days_box,
+                        View.VISIBLE
+                    )
+
+                    views.setViewVisibility(
+                        R.id.remaining_hours_box,
+                        View.VISIBLE
+                    )
+
+                    views.setViewVisibility(
+                        R.id.remaining_minutes_box,
+                        View.VISIBLE
+                    )
+                }
+
+                hours > 0L -> {
+
+                    views.setViewVisibility(
+                        R.id.remaining_days_box,
+                        View.GONE
+                    )
+
+                    views.setViewVisibility(
+                        R.id.remaining_hours_box,
+                        View.VISIBLE
+                    )
+
+                    views.setViewVisibility(
+                        R.id.remaining_minutes_box,
+                        View.VISIBLE
+                    )
+                }
+
+                else -> {
+
+                    views.setViewVisibility(
+                        R.id.remaining_days_box,
+                        View.GONE
+                    )
+
+                    views.setViewVisibility(
+                        R.id.remaining_hours_box,
+                        View.GONE
+                    )
+
+                    views.setViewVisibility(
+                        R.id.remaining_minutes_box,
+                        View.VISIBLE
+                    )
+                }
+            }
+
+            /*
+             * شريط التقدم.
+             */
             val previousEvent =
-                RemainingEventSchedule.previousEvent(
-                    nextEvent,
-                    now
-                )
+                RemainingEventSchedule
+                    .previousEvent(
+                        nextEvent,
+                        now
+                    )
 
             val progress =
                 calculateProgress(
@@ -163,8 +319,13 @@ class RemainingWidget : AppWidgetProvider() {
                 false
             )
 
+            /*
+             * فتح التطبيق عند الضغط على الويدجت.
+             */
             context.packageManager
-                .getLaunchIntentForPackage(context.packageName)
+                .getLaunchIntentForPackage(
+                    context.packageName
+                )
                 ?.let { launchIntent ->
 
                     views.setOnClickPendingIntent(
@@ -179,8 +340,24 @@ class RemainingWidget : AppWidgetProvider() {
                     )
                 }
 
-            AppWidgetManager.getInstance(context)
-                .updateAppWidget(widgetId, views)
+            updateAppWidget(
+                context,
+                widgetId,
+                views
+            )
+        }
+
+        private fun updateAppWidget(
+            context: Context,
+            widgetId: Int,
+            views: RemoteViews
+        ) {
+            AppWidgetManager
+                .getInstance(context)
+                .updateAppWidget(
+                    widgetId,
+                    views
+                )
         }
 
         private fun calculateProgress(
@@ -206,25 +383,70 @@ class RemainingWidget : AppWidgetProvider() {
 
             val elapsed =
                 (nowMillis - previousMillis)
-                    .coerceIn(0L, total)
+                    .coerceIn(
+                        0L,
+                        total
+                    )
 
             return (
                 elapsed.toDouble() /
                     total.toDouble() *
                     100.0
-                ).toInt()
-                .coerceIn(0, 100)
+                )
+                .toInt()
+                .coerceIn(
+                    0,
+                    100
+                )
         }
 
         private fun scheduleNextUpdate(
             context: Context
         ) {
-            val intent = Intent(
-                context,
-                RemainingWidget::class.java
-            ).apply {
-                action = ACTION_REFRESH
-            }
+
+            /*
+             * نحدد وقت التحديث بناءً على المناسبة القادمة.
+             */
+            val now =
+                System.currentTimeMillis()
+
+            val nextEvent =
+                RemainingEventSchedule
+                    .nextUpcoming(now)
+
+            val remaining =
+                nextEvent
+                    ?.let {
+                        (
+                            it.gregorianMillis -
+                                now
+                        ).coerceAtLeast(0L)
+                    }
+
+            /*
+             * إذا المناسبة خلال 24 ساعة:
+             * تحديث كل دقيقة.
+             *
+             * غير ذلك:
+             * كل 30 دقيقة لتقليل استهلاك البطارية.
+             */
+            val interval =
+                if (
+                    remaining != null &&
+                    remaining <= ONE_DAY
+                ) {
+                    FAST_UPDATE_INTERVAL
+                } else {
+                    NORMAL_UPDATE_INTERVAL
+                }
+
+            val intent =
+                Intent(
+                    context,
+                    RemainingWidget::class.java
+                ).apply {
+                    action = ACTION_REFRESH
+                }
 
             val pendingIntent =
                 PendingIntent.getBroadcast(
@@ -238,14 +460,22 @@ class RemainingWidget : AppWidgetProvider() {
             val alarmManager =
                 context.getSystemService(
                     Context.ALARM_SERVICE
-                ) as android.app.AlarmManager
+                ) as AlarmManager
 
             val triggerAt =
                 System.currentTimeMillis() +
-                    UPDATE_INTERVAL
+                    interval
 
-            alarmManager.set(
-                android.app.AlarmManager.RTC,
+            /*
+             * يسمح للنظام بإيقاظ التطبيق عند الحاجة،
+             * لكن Android قد يؤخر التنفيذ قليلًا بسبب
+             * توفير الطاقة.
+             *
+             * وهذا لا يؤثر على دقة الرقم لأن الحساب
+             * نفسه يعتمد على System.currentTimeMillis().
+             */
+            alarmManager.setAndAllowWhileIdle(
+                AlarmManager.RTC,
                 triggerAt,
                 pendingIntent
             )
@@ -323,12 +553,16 @@ object RemainingEventSchedule {
                 locale
             )
 
-        formatter.timeZone = timeZone
+        formatter.timeZone =
+            timeZone
 
-        return formatter.format(calendar.time)
+        return formatter.format(
+            calendar.time
+        )
     }
 
-    private val events: List<RemainingEvent> =
+    private val events:
+        List<RemainingEvent> =
         listOf(
 
             RemainingEvent(
@@ -410,7 +644,8 @@ object RemainingEventSchedule {
                 locale
             )
 
-        calendar.timeInMillis = nowMillis
+        calendar.timeInMillis =
+            nowMillis
 
         calendar.set(
             Calendar.HOUR_OF_DAY,
