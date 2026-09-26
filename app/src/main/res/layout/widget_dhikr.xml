@@ -109,15 +109,16 @@
         android:gravity="center"
         android:layoutDirection="rtl">
 
+        <!-- السابق أصبح في الجهة الأولى -->
         <TextView
-            android:id="@+id/dhikr_next"
+            android:id="@+id/dhikr_previous"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:layout_marginStart="2dp"
             android:layout_marginEnd="2dp"
             android:gravity="center"
-            android:text="التالي"
+            android:text="السابق"
             android:textAppearance="@style/WidgetZainTextAppearance"
             android:textColor="#FFFFFF"
             android:textSize="11sp"
@@ -137,15 +138,16 @@
             android:textSize="11sp"
             android:background="@drawable/dhikr_button_background" />
 
+        <!-- التالي أصبح في الجهة الأخيرة -->
         <TextView
-            android:id="@+id/dhikr_previous"
+            android:id="@+id/dhikr_next"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:layout_marginStart="2dp"
             android:layout_marginEnd="2dp"
             android:gravity="center"
-            android:text="السابق"
+            android:text="التالي"
             android:textAppearance="@style/WidgetZainTextAppearance"
             android:textColor="#FFFFFF"
             android:textSize="11sp"
