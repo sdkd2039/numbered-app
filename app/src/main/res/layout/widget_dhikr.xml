@@ -14,6 +14,7 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:text="أذكار الصباح"
+        android:textAppearance="@style/WidgetZainTextAppearance"
         android:textColor="#DCE8F5"
         android:textSize="12sp"
         android:textStyle="bold" />
@@ -26,6 +27,7 @@
         android:layout_marginTop="5dp"
         android:gravity="center"
         android:text="جارٍ تحميل الذكر..."
+        android:textAppearance="@style/WidgetZainTextAppearance"
         android:textColor="#FFFFFF"
         android:textSize="15sp"
         android:lineSpacingExtra="3dp"
@@ -50,6 +52,7 @@
             android:gravity="center"
             android:background="@drawable/dhikr_counter_background"
             android:text="0"
+            android:textAppearance="@style/WidgetZainTextAppearance"
             android:textColor="#FFFFFF"
             android:textSize="24sp"
             android:textStyle="bold" />
@@ -60,6 +63,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
             android:text="من 0"
+            android:textAppearance="@style/WidgetZainTextAppearance"
             android:textColor="#AEBBCC"
             android:textSize="9sp" />
 
@@ -92,6 +96,7 @@
             android:layout_marginEnd="2dp"
             android:gravity="center"
             android:text="التالي"
+            android:textAppearance="@style/WidgetZainTextAppearance"
             android:textColor="#FFFFFF"
             android:textSize="11sp"
             android:background="@drawable/dhikr_button_background" />
@@ -105,6 +110,7 @@
             android:layout_marginEnd="2dp"
             android:gravity="center"
             android:text="تصفير"
+            android:textAppearance="@style/WidgetZainTextAppearance"
             android:textColor="#FFFFFF"
             android:textSize="11sp"
             android:background="@drawable/dhikr_button_background" />
@@ -118,6 +124,7 @@
             android:layout_marginEnd="2dp"
             android:gravity="center"
             android:text="السابق"
+            android:textAppearance="@style/WidgetZainTextAppearance"
             android:textColor="#FFFFFF"
             android:textSize="11sp"
             android:background="@drawable/dhikr_button_background" />
