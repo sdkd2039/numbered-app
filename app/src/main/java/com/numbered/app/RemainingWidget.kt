@@ -90,9 +90,9 @@ class RemainingWidget : AppWidgetProvider() {
                 )
 
             /*
-             * تطبيق خط Zain على Remaining Widget فقط.
+             * الخط يتم تطبيقه من widget_remaining.xml
+             * عن طريق WidgetZainTextAppearance.
              */
-            applyZainFont(views)
 
             /*
              * الوقت الحقيقي الحالي من الجهاز.
@@ -302,39 +302,6 @@ class RemainingWidget : AppWidgetProvider() {
                 context,
                 widgetId,
                 views
-            )
-        }
-
-        /*
-         * تطبيق خط Zain على عناصر Remaining Widget فقط.
-         */
-        private fun applyZainFont(
-            views: RemoteViews
-        ) {
-
-            views.setTextViewTextAppearance(
-                R.id.remaining_event_name,
-                R.style.WidgetZainTextAppearance
-            )
-
-            views.setTextViewTextAppearance(
-                R.id.remaining_days,
-                R.style.WidgetZainTextAppearance
-            )
-
-            views.setTextViewTextAppearance(
-                R.id.remaining_hours,
-                R.style.WidgetZainTextAppearance
-            )
-
-            views.setTextViewTextAppearance(
-                R.id.remaining_minutes,
-                R.style.WidgetZainTextAppearance
-            )
-
-            views.setTextViewTextAppearance(
-                R.id.remaining_hijri_date,
-                R.style.WidgetZainTextAppearance
             )
         }
 
