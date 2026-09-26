@@ -1,4 +1,4 @@
 <style name="WidgetZainTextAppearance" parent="@android:style/TextAppearance.Material.Body1">
-    <item name="fontFamily">@font/zain_bold</item>
+    <item name="android:fontFamily">@font/zain_bold</item>
     <item name="android:textStyle">normal</item>
 </style>
