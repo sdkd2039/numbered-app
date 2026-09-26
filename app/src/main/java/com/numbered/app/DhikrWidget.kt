@@ -16,7 +16,6 @@ class DhikrWidget : AppWidgetProvider() {
         manager: AppWidgetManager,
         ids: IntArray
     ) {
-
         ids.forEach { widgetId ->
             render(
                 context,
@@ -49,16 +48,11 @@ class DhikrWidget : AppWidgetProvider() {
         }
     }
 
-
     override fun onReceive(
         context: Context,
         intent: Intent
     ) {
-
-        super.onReceive(
-            context,
-            intent
-        )
+        super.onReceive(context, intent)
 
         val widgetId =
             intent.getIntExtra(
@@ -73,27 +67,40 @@ class DhikrWidget : AppWidgetProvider() {
             return
         }
 
-
         when (intent.action) {
 
             ACTION_PREVIOUS,
             ACTION_NEXT,
             ACTION_GROUP_PREVIOUS,
-            ACTION_GROUP_NEXT -> {
+            ACTION_GROUP_NEXT,
+            ACTION_TAP,
+            ACTION_RESET -> {
 
                 val data =
-                    DhikrRepository.loadCached(
-                        context
-                    )
+                    DhikrRepository.loadCached(context)
 
                 if (data.isNotEmpty()) {
 
-                    move(
-                        context,
-                        widgetId,
-                        data,
-                        intent.action!!
-                    )
+                    when (intent.action) {
+
+                        ACTION_TAP -> incrementCounter(
+                            context,
+                            widgetId,
+                            data
+                        )
+
+                        ACTION_RESET -> resetCounter(
+                            context,
+                            widgetId
+                        )
+
+                        else -> move(
+                            context,
+                            widgetId,
+                            data,
+                            intent.action!!
+                        )
+                    }
 
                     render(
                         context,
@@ -104,7 +111,6 @@ class DhikrWidget : AppWidgetProvider() {
             }
         }
     }
-
 
     companion object {
 
@@ -117,6 +123,8 @@ class DhikrWidget : AppWidgetProvider() {
         private const val KEY_INDEX =
             "index_"
 
+        private const val KEY_COUNT =
+            "count_"
 
         const val ACTION_PREVIOUS =
             "com.numbered.app.action.DHIKR_PREVIOUS"
@@ -129,6 +137,12 @@ class DhikrWidget : AppWidgetProvider() {
 
         const val ACTION_GROUP_NEXT =
             "com.numbered.app.action.DHIKR_GROUP_NEXT"
+
+        const val ACTION_TAP =
+            "com.numbered.app.action.DHIKR_TAP"
+
+        const val ACTION_RESET =
+            "com.numbered.app.action.DHIKR_RESET"
 
 
         private fun render(
@@ -143,12 +157,10 @@ class DhikrWidget : AppWidgetProvider() {
                     R.layout.widget_dhikr
                 )
 
-
             val groups =
                 data
                     .map { it.group }
                     .distinct()
-
 
             val prefs =
                 context.getSharedPreferences(
@@ -156,15 +168,10 @@ class DhikrWidget : AppWidgetProvider() {
                     Context.MODE_PRIVATE
                 )
 
-
             val groupIndex =
-
                 if (groups.isEmpty()) {
-
                     0
-
                 } else {
-
                     prefs
                         .getInt(
                             KEY_GROUP + widgetId,
@@ -176,30 +183,20 @@ class DhikrWidget : AppWidgetProvider() {
                         )
                 }
 
-
             val entries =
-
                 if (groups.isEmpty()) {
-
                     emptyList()
-
                 } else {
-
                     data.filter {
                         it.group ==
                             groups[groupIndex]
                     }
                 }
 
-
             val entryIndex =
-
                 if (entries.isEmpty()) {
-
                     0
-
                 } else {
-
                     prefs
                         .getInt(
                             KEY_INDEX + widgetId,
@@ -211,49 +208,50 @@ class DhikrWidget : AppWidgetProvider() {
                         )
                 }
 
-
             val entry =
-                entries.getOrNull(
-                    entryIndex
-                )
-
+                entries.getOrNull(entryIndex)
 
             val selectedGroup =
-
                 if (groups.isEmpty()) {
-
                     "الذكر"
-
                 } else {
-
                     groups[groupIndex]
                 }
 
+            val targetCount =
+                parseCount(
+                    entry?.count
+                )
 
-            val selectedCounter =
-                entry
-                    ?.count
-                    ?.trim()
-                    .orEmpty()
+            val currentCount =
+                prefs
+                    .getInt(
+                        KEY_COUNT + widgetId,
+                        0
+                    )
+                    .let { saved ->
 
+                        if (targetCount > 0) {
+                            saved.coerceIn(
+                                0,
+                                targetCount
+                            )
+                        } else {
+                            saved.coerceAtLeast(0)
+                        }
+                    }
 
             val selectedProgress =
-
                 if (entries.isEmpty()) {
-
                     ""
-
                 } else {
-
                     "${entryIndex + 1} / ${entries.size}"
                 }
-
 
             views.setTextViewText(
                 R.id.dhikr_group,
                 selectedGroup
             )
-
 
             views.setTextViewText(
                 R.id.dhikr_text,
@@ -261,34 +259,30 @@ class DhikrWidget : AppWidgetProvider() {
                     ?: "لا توجد بيانات متاحة"
             )
 
-
             views.setTextViewText(
                 R.id.dhikr_count_label,
 
-                if (
-                    selectedCounter.isNotBlank()
-                ) {
-
-                    "عدد المرات: $selectedCounter"
-
+                if (targetCount > 0) {
+                    "عدد المرات: $targetCount"
                 } else {
-
                     ""
                 }
             )
 
-
             views.setTextViewText(
                 R.id.dhikr_counter_card,
-                selectedCounter
-            )
 
+                if (targetCount > 0) {
+                    "$currentCount / $targetCount"
+                } else {
+                    currentCount.toString()
+                }
+            )
 
             views.setTextViewText(
                 R.id.dhikr_progress,
                 selectedProgress
             )
-
 
             views.setViewVisibility(
                 R.id.dhikr_group_previous,
@@ -299,7 +293,6 @@ class DhikrWidget : AppWidgetProvider() {
                     View.GONE
             )
 
-
             views.setViewVisibility(
                 R.id.dhikr_group_next,
 
@@ -309,45 +302,35 @@ class DhikrWidget : AppWidgetProvider() {
                     View.GONE
             )
 
-
             views.setViewVisibility(
                 R.id.dhikr_counter_card,
 
-                if (
-                    selectedCounter.isNotBlank()
-                )
+                if (entry != null)
                     View.VISIBLE
                 else
                     View.GONE
             )
-
 
             views.setViewVisibility(
                 R.id.dhikr_count_label,
 
-                if (
-                    selectedCounter.isNotBlank()
-                )
+                if (targetCount > 0)
                     View.VISIBLE
                 else
                     View.GONE
             )
-
 
             views.setViewVisibility(
                 R.id.dhikr_progress,
 
-                if (
-                    selectedProgress.isNotBlank()
-                )
+                if (selectedProgress.isNotBlank())
                     View.VISIBLE
                 else
                     View.GONE
             )
 
-
             /*
-             * أزرار التنقل
+             * أزرار التنقل بين الأذكار
              */
 
             bind(
@@ -358,7 +341,6 @@ class DhikrWidget : AppWidgetProvider() {
                 ACTION_PREVIOUS
             )
 
-
             bind(
                 views,
                 context,
@@ -367,6 +349,9 @@ class DhikrWidget : AppWidgetProvider() {
                 ACTION_NEXT
             )
 
+            /*
+             * أزرار تغيير المجموعة
+             */
 
             bind(
                 views,
@@ -376,7 +361,6 @@ class DhikrWidget : AppWidgetProvider() {
                 ACTION_GROUP_PREVIOUS
             )
 
-
             bind(
                 views,
                 context,
@@ -385,10 +369,9 @@ class DhikrWidget : AppWidgetProvider() {
                 ACTION_GROUP_NEXT
             )
 
-
             /*
              * الضغط على نص الذكر
-             * ينتقل للذكر التالي
+             * يزيد العداد
              */
 
             bind(
@@ -396,13 +379,25 @@ class DhikrWidget : AppWidgetProvider() {
                 context,
                 widgetId,
                 R.id.dhikr_text,
-                ACTION_NEXT
+                ACTION_TAP
             )
 
+            /*
+             * الضغط على عداد الذكر
+             * يزيد العداد
+             */
+
+            bind(
+                views,
+                context,
+                widgetId,
+                R.id.dhikr_counter_card,
+                ACTION_TAP
+            )
 
             /*
-             * الضغط على رقم الذكر
-             * ينتقل للذكر التالي
+             * الضغط على رقم ترتيب الذكر
+             * لا يغير الذكر
              */
 
             bind(
@@ -410,40 +405,12 @@ class DhikrWidget : AppWidgetProvider() {
                 context,
                 widgetId,
                 R.id.dhikr_progress,
-                ACTION_NEXT
+                ACTION_TAP
             )
 
-
             /*
-             * فتح التطبيق عند الضغط
-             * على مساحة الويدجت الرئيسية
+             * تحديث الويدجت
              */
-
-            context
-                .packageManager
-                .getLaunchIntentForPackage(
-                    context.packageName
-                )
-                ?.let { launchIntent ->
-
-                    views.setOnClickPendingIntent(
-
-                        R.id.dhikr_root,
-
-                        PendingIntent.getActivity(
-
-                            context,
-
-                            widgetId,
-
-                            launchIntent,
-
-                            PendingIntent.FLAG_UPDATE_CURRENT or
-                                PendingIntent.FLAG_IMMUTABLE
-                        )
-                    )
-                }
-
 
             AppWidgetManager
                 .getInstance(context)
@@ -451,6 +418,112 @@ class DhikrWidget : AppWidgetProvider() {
                     widgetId,
                     views
                 )
+        }
+
+
+        private fun incrementCounter(
+            context: Context,
+            widgetId: Int,
+            data: List<DhikrEntry>
+        ) {
+
+            val prefs =
+                context.getSharedPreferences(
+                    PREFS,
+                    Context.MODE_PRIVATE
+                )
+
+            val groups =
+                data
+                    .map { it.group }
+                    .distinct()
+
+            if (groups.isEmpty()) {
+                return
+            }
+
+            val groupIndex =
+                prefs
+                    .getInt(
+                        KEY_GROUP + widgetId,
+                        0
+                    )
+                    .coerceIn(
+                        0,
+                        groups.lastIndex
+                    )
+
+            val entries =
+                data.filter {
+                    it.group ==
+                        groups[groupIndex]
+                }
+
+            if (entries.isEmpty()) {
+                return
+            }
+
+            val entryIndex =
+                prefs
+                    .getInt(
+                        KEY_INDEX + widgetId,
+                        0
+                    )
+                    .coerceIn(
+                        0,
+                        entries.lastIndex
+                    )
+
+            val entry =
+                entries[entryIndex]
+
+            val targetCount =
+                parseCount(entry.count)
+
+            val currentCount =
+                prefs.getInt(
+                    KEY_COUNT + widgetId,
+                    0
+                )
+
+            val newCount =
+
+                if (targetCount > 0) {
+
+                    (currentCount + 1)
+                        .coerceAtMost(targetCount)
+
+                } else {
+
+                    currentCount + 1
+                }
+
+            prefs
+                .edit()
+                .putInt(
+                    KEY_COUNT + widgetId,
+                    newCount
+                )
+                .apply()
+        }
+
+
+        private fun resetCounter(
+            context: Context,
+            widgetId: Int
+        ) {
+
+            context
+                .getSharedPreferences(
+                    PREFS,
+                    Context.MODE_PRIVATE
+                )
+                .edit()
+                .putInt(
+                    KEY_COUNT + widgetId,
+                    0
+                )
+                .apply()
         }
 
 
@@ -476,7 +549,6 @@ class DhikrWidget : AppWidgetProvider() {
                         widgetId
                     )
                 }
-
 
             views.setOnClickPendingIntent(
 
@@ -509,18 +581,15 @@ class DhikrWidget : AppWidgetProvider() {
                     .map { it.group }
                     .distinct()
 
-
             if (groups.isEmpty()) {
                 return
             }
-
 
             val prefs =
                 context.getSharedPreferences(
                     PREFS,
                     Context.MODE_PRIVATE
                 )
-
 
             var groupIndex =
                 prefs
@@ -533,17 +602,11 @@ class DhikrWidget : AppWidgetProvider() {
                         groups.lastIndex
                     )
 
-
             var entryIndex =
                 prefs.getInt(
                     KEY_INDEX + widgetId,
                     0
                 )
-
-
-            /*
-             * تغيير المجموعة
-             */
 
             if (
                 action ==
@@ -553,15 +616,14 @@ class DhikrWidget : AppWidgetProvider() {
             ) {
 
                 val delta =
-
                     if (
                         action ==
                             ACTION_GROUP_NEXT
-                    )
+                    ) {
                         1
-                    else
+                    } else {
                         -1
-
+                    }
 
                 groupIndex =
                     (
@@ -569,12 +631,6 @@ class DhikrWidget : AppWidgetProvider() {
                             delta +
                             groups.size
                     ) % groups.size
-
-
-                /*
-                 * عند تغيير المجموعة
-                 * يبدأ من الذكر الأول
-                 */
 
                 entryIndex = 0
 
@@ -586,22 +642,19 @@ class DhikrWidget : AppWidgetProvider() {
                             groups[groupIndex]
                     }
 
-
                 if (entries.isEmpty()) {
                     return
                 }
 
-
                 val delta =
-
                     if (
                         action ==
                             ACTION_NEXT
-                    )
+                    ) {
                         1
-                    else
+                    } else {
                         -1
-
+                    }
 
                 entryIndex =
                     (
@@ -610,7 +663,6 @@ class DhikrWidget : AppWidgetProvider() {
                             entries.size
                     ) % entries.size
             }
-
 
             prefs
                 .edit()
@@ -622,7 +674,46 @@ class DhikrWidget : AppWidgetProvider() {
                     KEY_INDEX + widgetId,
                     entryIndex
                 )
+                .putInt(
+                    KEY_COUNT + widgetId,
+                    0
+                )
                 .apply()
+        }
+
+
+        private fun parseCount(
+            raw: String?
+        ): Int {
+
+            val normalized =
+                raw
+                    .orEmpty()
+                    .trim()
+                    .map { char ->
+
+                        when (char) {
+
+                            '٠' -> '0'
+                            '١' -> '1'
+                            '٢' -> '2'
+                            '٣' -> '3'
+                            '٤' -> '4'
+                            '٥' -> '5'
+                            '٦' -> '6'
+                            '٧' -> '7'
+                            '٨' -> '8'
+                            '٩' -> '9'
+
+                            else -> char
+                        }
+                    }
+                    .joinToString("")
+
+            return normalized
+                .filter { it.isDigit() }
+                .toIntOrNull()
+                ?: 0
         }
     }
 }
