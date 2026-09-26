@@ -83,7 +83,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
-            android:text="من 0"
+            android:text="TEST123"
             android:textAppearance="@style/WidgetZainTextAppearance"
             android:textColor="#AEBBCC"
             android:textSize="9sp"
