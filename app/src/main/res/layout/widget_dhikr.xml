@@ -34,7 +34,7 @@
             android:text="الصباح"
             android:textAppearance="@style/WidgetZainTextAppearance"
             android:textColor="#FFFFFF"
-            android:textSize="13sp"
+            android:textSize="30sp"
             android:maxLines="1"
             android:ellipsize="end" />
 
