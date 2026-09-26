@@ -1,144 +1,142 @@
 package com.numbered.app
 
 import android.content.Context
-import android.os.Handler
-import android.os.Looper
-import android.util.Base64
-import java.net.HttpURLConnection
-import java.net.URL
+import java.io.BufferedReader
+import java.io.InputStreamReader
 
-internal data class DhikrEntry(
-    val group: String,
+data class DhikrItem(
     val text: String,
-    val count: String,
-    val id: String
+    val count: Int,
+    val category: String
 )
 
-internal object DhikrRepository {
-    private const val CSV_URL = "https://raw.githubusercontent.com/sdkd2039/numbered-app/refs/heads/main/data/%D9%85%D8%B9%D8%AF%D9%88%D8%AF%D8%A7%D8%AA%20-%20%D8%A7%D9%84%D8%A3%D8%B0%D9%83%D8%A7%D8%B1.csv"
-    private const val PREFS = "dhikr_data_cache"
-    private const val KEY_ROWS = "rows"
+object DhikrRepository {
 
-    fun loadCached(context: Context): List<DhikrEntry> {
-        val encoded = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getString(KEY_ROWS, null) ?: return emptyList()
+    private const val CSV_PATH = "data/معدودات - الأذكار.csv"
 
-        return encoded.split('\n').mapNotNull { line ->
-            val fields = line.split('|', limit = 4)
-            if (fields.size == 4) {
-                DhikrEntry(
-                    group = decode(fields[0]),
-                    text = decode(fields[1]),
-                    count = decode(fields[2]),
-                    id = decode(fields[3])
-                )
-            } else {
-                null
+    fun load(context: Context): List<DhikrItem> {
+        return try {
+            context.assets.open(CSV_PATH).use { input ->
+                BufferedReader(InputStreamReader(input, Charsets.UTF_8)).use { reader ->
+                    parse(reader)
+                }
             }
+        } catch (_: Exception) {
+            emptyList()
         }
     }
 
-    fun refresh(context: Context, callback: (List<DhikrEntry>) -> Unit) {
-        Thread {
-            val fresh = try {
-                val connection = URL(CSV_URL).openConnection() as HttpURLConnection
-                connection.connectTimeout = 10_000
-                connection.readTimeout = 20_000
-                connection.requestMethod = "GET"
-                connection.inputStream.use { input ->
-                    parseCsv(input.bufferedReader(Charsets.UTF_8).readText())
-                }
-            } catch (_: Exception) {
-                emptyList()
-            }
-
-            if (fresh.isNotEmpty()) {
-                val serialized = fresh.joinToString("\n") { entry ->
-                    listOf(entry.group, entry.text, entry.count, entry.id)
-                        .joinToString("|") { value -> encode(value) }
-                }
-
-                context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                    .edit()
-                    .putString(KEY_ROWS, serialized)
-                    .apply()
-            }
-
-            Handler(Looper.getMainLooper()).post {
-                callback(if (fresh.isNotEmpty()) fresh else loadCached(context))
-            }
-        }.start()
-    }
-
-    /*
-     * The repository CSV contains these columns in order:
-     * group, dhikr text, repetition count, stable id
-     * It has no header row and may contain quoted commas.
-     */
-    private fun parseCsv(csv: String): List<DhikrEntry> {
+    private fun parse(reader: BufferedReader): List<DhikrItem> {
         val rows = mutableListOf<List<String>>()
-        val currentRow = mutableListOf<String>()
-        val currentField = StringBuilder()
-        var inQuotes = false
-        var index = 0
 
-        fun finishField() {
-            currentRow.add(currentField.toString())
-            currentField.setLength(0)
-        }
-
-        fun finishRow() {
-            if (currentRow.isNotEmpty() || currentField.isNotEmpty()) {
-                finishField()
-                rows.add(currentRow.toList())
-                currentRow.clear()
+        reader.forEachLine { line ->
+            if (line.isNotBlank()) {
+                val row = parseCsvLine(line)
+                if (row.isNotEmpty()) rows.add(row)
             }
         }
 
-        while (index < csv.length) {
-            val character = csv[index]
-            when {
-                character == '"' && inQuotes && index + 1 < csv.length && csv[index + 1] == '"' -> {
-                    currentField.append('"')
-                    index++
+        if (rows.isEmpty()) return emptyList()
+
+        val header = rows.first().map {
+            it.trim().lowercase()
+        }
+
+        val hasHeader = header.any {
+            it.contains("ذكر") ||
+            it.contains("نص") ||
+            it.contains("text") ||
+            it.contains("count") ||
+            it.contains("عدد") ||
+            it.contains("category") ||
+            it.contains("تصنيف")
+        }
+
+        val start = if (hasHeader) 1 else 0
+
+        var textIndex = 0
+        var countIndex = 1
+        var categoryIndex = 2
+
+        if (hasHeader) {
+            header.forEachIndexed { index, value ->
+                when {
+                    value.contains("ذكر") ||
+                    value.contains("نص") ||
+                    value.contains("text") ||
+                    value.contains("dhikr") -> textIndex = index
+
+                    value.contains("عدد") ||
+                    value.contains("تكرار") ||
+                    value.contains("count") ||
+                    value.contains("repeat") -> countIndex = index
+
+                    value.contains("تصنيف") ||
+                    value.contains("قسم") ||
+                    value.contains("category") ||
+                    value.contains("cat") -> categoryIndex = index
                 }
-                character == '"' -> inQuotes = !inQuotes
-                character == ',' && !inQuotes -> finishField()
-                character == '\n' && !inQuotes -> finishRow()
-                character == '\r' -> Unit
-                else -> currentField.append(character)
             }
-            index++
         }
 
-        if (inQuotes || currentField.isNotEmpty() || currentRow.isNotEmpty()) {
-            finishRow()
-        }
+        return rows.drop(start).mapNotNull { row ->
+            if (row.isEmpty()) return@mapNotNull null
 
-        return rows.mapNotNull { columns ->
-            if (columns.size < 2) return@mapNotNull null
-            val group = columns[0].trim()
-            val text = columns[1].trim()
-            if (group.isEmpty() || text.isEmpty()) return@mapNotNull null
+            val text = row.getOrNull(textIndex)?.trim().orEmpty()
+            if (text.isEmpty()) return@mapNotNull null
 
-            DhikrEntry(
-                group = group,
+            val count = row
+                .getOrNull(countIndex)
+                ?.trim()
+                ?.toIntOrNull()
+                ?.takeIf { it > 0 }
+                ?: 1
+
+            val category = row
+                .getOrNull(categoryIndex)
+                ?.trim()
+                .orEmpty()
+                .ifEmpty { "منوع" }
+
+            DhikrItem(
                 text = text,
-                count = columns.getOrNull(2)?.trim().orEmpty(),
-                id = columns.getOrNull(3)?.trim().orEmpty()
+                count = count,
+                category = category
             )
         }
     }
 
-    private fun encode(value: String): String = Base64.encodeToString(
-        value.toByteArray(Charsets.UTF_8),
-        Base64.NO_WRAP
-    )
+    private fun parseCsvLine(line: String): List<String> {
+        val result = mutableListOf<String>()
+        val current = StringBuilder()
+        var insideQuotes = false
+        var i = 0
 
-    private fun decode(value: String): String = try {
-        String(Base64.decode(value, Base64.DEFAULT), Charsets.UTF_8)
-    } catch (_: Exception) {
-        ""
+        while (i < line.length) {
+            val c = line[i]
+
+            when {
+                c == '"' -> {
+                    if (insideQuotes && i + 1 < line.length && line[i + 1] == '"') {
+                        current.append('"')
+                        i++
+                    } else {
+                        insideQuotes = !insideQuotes
+                    }
+                }
+
+                c == ',' && !insideQuotes -> {
+                    result.add(current.toString())
+                    current.clear()
+                }
+
+                else -> current.append(c)
+            }
+
+            i++
+        }
+
+        result.add(current.toString())
+        return result
     }
 }
-
