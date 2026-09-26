@@ -40,6 +40,29 @@
 
     </LinearLayout>
 
+    <!-- Zain Bold test -->
+    <TextView
+        android:id="@+id/dhikr_test_zain"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="الصباح"
+        android:textAppearance="@style/WidgetZainTextAppearance"
+        android:textColor="#FFFFFF"
+        android:textSize="30sp"
+        android:maxLines="1" />
+
+    <!-- Default system font test -->
+    <TextView
+        android:id="@+id/dhikr_test_default"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="الصباح"
+        android:textColor="#FFFFFF"
+        android:textSize="30sp"
+        android:maxLines="1" />
+
     <TextView
         android:id="@+id/dhikr_text"
         android:layout_width="match_parent"
