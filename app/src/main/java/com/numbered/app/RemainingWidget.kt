@@ -53,10 +53,7 @@ class RemainingWidget : AppWidgetProvider() {
                 manager
                     .getAppWidgetIds(component)
                     .forEach { widgetId ->
-                        updateWidget(
-                            context,
-                            widgetId
-                        )
+                        updateWidget(context, widgetId)
                     }
 
                 scheduleNextUpdate(context)
@@ -90,12 +87,14 @@ class RemainingWidget : AppWidgetProvider() {
                 )
 
             /*
-             * نأخذ الوقت الحقيقي من الجهاز
-             * في لحظة تحديث الويدجت.
+             * الوقت الحقيقي الحالي من الجهاز.
              */
             val now =
                 System.currentTimeMillis()
 
+            /*
+             * البحث عن أقرب مناسبة قادمة.
+             */
             val nextEvent =
                 RemainingEventSchedule.nextUpcoming(now)
 
@@ -131,12 +130,12 @@ class RemainingWidget : AppWidgetProvider() {
 
                 views.setViewVisibility(
                     R.id.remaining_days_box,
-                    View.GONE
+                    View.VISIBLE
                 )
 
                 views.setViewVisibility(
                     R.id.remaining_hours_box,
-                    View.GONE
+                    View.VISIBLE
                 )
 
                 views.setViewVisibility(
@@ -161,116 +160,93 @@ class RemainingWidget : AppWidgetProvider() {
             }
 
             /*
-             * حساب الوقت المتبقي الحقيقي.
+             * الفرق الحقيقي بين الآن وموعد المناسبة.
              */
             val remainingMillis =
                 (
                     nextEvent.gregorianMillis - now
                 ).coerceAtLeast(0L)
 
-            val totalMinutes =
-                TimeUnit.MILLISECONDS
-                    .toMinutes(remainingMillis)
-
+            /*
+             * أيام + ساعات + دقائق فقط.
+             *
+             * لا توجد ثواني.
+             */
             val days =
-                totalMinutes / 1440L
+                TimeUnit.MILLISECONDS
+                    .toDays(remainingMillis)
 
             val hours =
-                (totalMinutes % 1440L) / 60L
+                TimeUnit.MILLISECONDS
+                    .toHours(remainingMillis) % 24L
 
             val minutes =
-                totalMinutes % 60L
+                TimeUnit.MILLISECONDS
+                    .toMinutes(remainingMillis) % 60L
 
             /*
-             * البيانات الأساسية.
+             * اسم المناسبة.
              */
             views.setTextViewText(
                 R.id.remaining_event_name,
                 nextEvent.name
             )
 
+            /*
+             * الأيام.
+             */
             views.setTextViewText(
                 R.id.remaining_days,
                 days.toString()
             )
 
+            /*
+             * الساعات.
+             */
             views.setTextViewText(
                 R.id.remaining_hours,
                 hours.toString()
             )
 
+            /*
+             * الدقائق.
+             */
             views.setTextViewText(
                 R.id.remaining_minutes,
                 minutes.toString()
             )
 
+            /*
+             * التاريخ.
+             */
             views.setTextViewText(
                 R.id.remaining_hijri_date,
                 "${nextEvent.hijriDate} | ${nextEvent.gregorianDate}"
             )
 
             /*
-             * إظهار وإخفاء وحدات الوقت تلقائيًا.
+             * دائمًا نعرض:
+             * الأيام + الساعات + الدقائق.
              */
-            when {
+            views.setViewVisibility(
+                R.id.remaining_days_box,
+                View.VISIBLE
+            )
 
-                days > 0L -> {
+            views.setViewVisibility(
+                R.id.remaining_hours_box,
+                View.VISIBLE
+            )
 
-                    views.setViewVisibility(
-                        R.id.remaining_days_box,
-                        View.VISIBLE
-                    )
-
-                    views.setViewVisibility(
-                        R.id.remaining_hours_box,
-                        View.VISIBLE
-                    )
-
-                    views.setViewVisibility(
-                        R.id.remaining_minutes_box,
-                        View.VISIBLE
-                    )
-                }
-
-                hours > 0L -> {
-
-                    views.setViewVisibility(
-                        R.id.remaining_days_box,
-                        View.GONE
-                    )
-
-                    views.setViewVisibility(
-                        R.id.remaining_hours_box,
-                        View.VISIBLE
-                    )
-
-                    views.setViewVisibility(
-                        R.id.remaining_minutes_box,
-                        View.VISIBLE
-                    )
-                }
-
-                else -> {
-
-                    views.setViewVisibility(
-                        R.id.remaining_days_box,
-                        View.GONE
-                    )
-
-                    views.setViewVisibility(
-                        R.id.remaining_hours_box,
-                        View.GONE
-                    )
-
-                    views.setViewVisibility(
-                        R.id.remaining_minutes_box,
-                        View.VISIBLE
-                    )
-                }
-            }
+            views.setViewVisibility(
+                R.id.remaining_minutes_box,
+                View.VISIBLE
+            )
 
             /*
-             * حساب نسبة التقدم.
+             * حساب شريط التقدم.
+             *
+             * المناسبة السابقة ← الآن ← المناسبة الحالية
              */
             val previousEvent =
                 RemainingEventSchedule.previousEvent(
@@ -285,7 +261,7 @@ class RemainingWidget : AppWidgetProvider() {
                 )
 
             /*
-             * تحديث شريط التقدم الرسومي.
+             * تحديث شريط التقدم.
              */
             views.setProgressBar(
                 R.id.remaining_progress,
@@ -322,11 +298,15 @@ class RemainingWidget : AppWidgetProvider() {
             )
         }
 
+        /*
+         * تحديث الويدجت.
+         */
         private fun updateAppWidget(
             context: Context,
             widgetId: Int,
             views: RemoteViews
         ) {
+
             AppWidgetManager
                 .getInstance(context)
                 .updateAppWidget(
@@ -335,6 +315,10 @@ class RemainingWidget : AppWidgetProvider() {
                 )
         }
 
+        /*
+         * حساب نسبة التقدم من المناسبة السابقة
+         * حتى المناسبة الحالية.
+         */
         private fun calculateProgress(
             previousMillis: Long?,
             nextMillis: Long,
@@ -342,39 +326,47 @@ class RemainingWidget : AppWidgetProvider() {
         ): Int {
 
             /*
-             * أول مناسبة في القائمة:
-             * لا يوجد حدث سابق يمكن حساب النسبة منه.
+             * إذا لم توجد مناسبة سابقة،
+             * نبدأ من 0%.
              */
             if (previousMillis == null) {
                 return 0
             }
 
+            /*
+             * حماية من التواريخ غير الصحيحة.
+             */
             if (nextMillis <= previousMillis) {
                 return 0
             }
 
-            val total =
+            val totalDuration =
                 nextMillis - previousMillis
 
-            val elapsed =
-                (nowMillis - previousMillis)
-                    .coerceIn(
-                        0L,
-                        total
-                    )
+            val elapsedDuration =
+                (
+                    nowMillis - previousMillis
+                ).coerceIn(
+                    0L,
+                    totalDuration
+                )
 
-            return (
-                elapsed.toDouble() /
-                    total.toDouble() *
-                    100.0
-                )
-                .toInt()
-                .coerceIn(
-                    0,
-                    100
-                )
+            val progress =
+                (
+                    elapsedDuration.toDouble()
+                        / totalDuration.toDouble()
+                        * 100.0
+                ).toInt()
+
+            return progress.coerceIn(
+                0,
+                100
+            )
         }
 
+        /*
+         * جدولة التحديث القادم.
+         */
         private fun scheduleNextUpdate(
             context: Context
         ) {
@@ -393,10 +385,10 @@ class RemainingWidget : AppWidgetProvider() {
                 }
 
             /*
-             * خلال آخر 24 ساعة:
+             * إذا بقي أقل من 24 ساعة:
              * تحديث كل دقيقة.
              *
-             * قبل ذلك:
+             * غير ذلك:
              * تحديث كل 30 دقيقة.
              */
             val interval =
@@ -457,12 +449,23 @@ data class RemainingEvent(
 
 object RemainingEventSchedule {
 
+    /*
+     * توقيت المملكة العربية السعودية.
+     */
     private val timeZone =
         TimeZone.getTimeZone("Asia/Riyadh")
 
     private val locale =
         Locale("ar", "SA")
 
+    /*
+     * تحويل التاريخ إلى milliseconds.
+     *
+     * الساعة:
+     * 00:00:00
+     *
+     * بتوقيت الرياض.
+     */
     private fun dateMillis(
         year: Int,
         month: Int,
@@ -489,9 +492,33 @@ object RemainingEventSchedule {
         return calendar.timeInMillis
     }
 
+    /*
+     * المناسبات.
+     *
+     * نضيف عيد الأضحى 2026 كمناسبة سابقة
+     * حتى يستطيع شريط رمضان 2027 حساب
+     * نسبة التقدم من المناسبة السابقة.
+     */
     private val events =
         listOf(
 
+            /*
+             * مناسبة سابقة فقط لحساب التقدم.
+             */
+            RemainingEvent(
+                name = "عيد الأضحى المبارك",
+                hijriDate = "10 ذو الحجة 1447هـ",
+                gregorianDate = "27 مايو 2026م",
+                gregorianMillis = dateMillis(
+                    2026,
+                    5,
+                    27
+                )
+            ),
+
+            /*
+             * رمضان 2027
+             */
             RemainingEvent(
                 name = "شهر رمضان المبارك",
                 hijriDate = "1 رمضان 1448هـ",
@@ -503,6 +530,9 @@ object RemainingEventSchedule {
                 )
             ),
 
+            /*
+             * عيد الفطر 2027
+             */
             RemainingEvent(
                 name = "عيد الفطر المبارك",
                 hijriDate = "1 شوال 1448هـ",
@@ -514,6 +544,9 @@ object RemainingEventSchedule {
                 )
             ),
 
+            /*
+             * عشر ذي الحجة 2027
+             */
             RemainingEvent(
                 name = "عشر ذي الحجة",
                 hijriDate = "1 ذو الحجة 1448هـ",
@@ -525,6 +558,9 @@ object RemainingEventSchedule {
                 )
             ),
 
+            /*
+             * عيد الأضحى 2027
+             */
             RemainingEvent(
                 name = "عيد الأضحى المبارك",
                 hijriDate = "10 ذو الحجة 1448هـ",
@@ -537,6 +573,9 @@ object RemainingEventSchedule {
             )
         )
 
+    /*
+     * الحصول على أقرب مناسبة قادمة.
+     */
     fun nextUpcoming(
         nowMillis: Long
     ): RemainingEvent? {
@@ -546,6 +585,10 @@ object RemainingEventSchedule {
         }
     }
 
+    /*
+     * الحصول على المناسبة السابقة
+     * للمناسبة القادمة.
+     */
     fun previousEvent(
         nextEvent: RemainingEvent
     ): RemainingEvent? {
