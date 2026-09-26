@@ -9,7 +9,6 @@ import android.content.Context
 import android.content.Intent
 import android.view.View
 import android.widget.RemoteViews
-import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import java.util.TimeZone
@@ -70,16 +69,9 @@ class RemainingWidget : AppWidgetProvider() {
         private const val ACTION_REFRESH =
             "com.numbered.app.action.REMAINING_REFRESH"
 
-        /*
-         * تحديث عادي كل 30 دقيقة عندما تكون المناسبة بعيدة.
-         */
         private const val NORMAL_UPDATE_INTERVAL =
             30L * 60L * 1000L
 
-        /*
-         * عندما تصبح المناسبة خلال 24 ساعة،
-         * نطلب تحديثًا كل دقيقة.
-         */
         private const val FAST_UPDATE_INTERVAL =
             60L * 1000L
 
@@ -98,21 +90,18 @@ class RemainingWidget : AppWidgetProvider() {
                 )
 
             /*
-             * مهم:
-             *
-             * نقرأ ساعة الجهاز في نفس لحظة الحساب.
-             * لا نعتمد على عداد ينقص كل دقيقة.
-             *
-             * لذلك حتى لو تأخر Android في تشغيل التحديث،
-             * عند التحديث التالي سيُعاد حساب الوقت الحقيقي.
+             * نأخذ الوقت الحقيقي من الجهاز
+             * في لحظة تحديث الويدجت.
              */
             val now =
                 System.currentTimeMillis()
 
             val nextEvent =
-                RemainingEventSchedule
-                    .nextUpcoming(now)
+                RemainingEventSchedule.nextUpcoming(now)
 
+            /*
+             * لا توجد مناسبة قادمة.
+             */
             if (nextEvent == null) {
 
                 views.setTextViewText(
@@ -140,10 +129,6 @@ class RemainingWidget : AppWidgetProvider() {
                     ""
                 )
 
-                /*
-                 * عند عدم وجود مناسبة:
-                 * نخفي الأيام والساعات ونترك الدقائق ظاهرة.
-                 */
                 views.setViewVisibility(
                     R.id.remaining_days_box,
                     View.GONE
@@ -176,18 +161,13 @@ class RemainingWidget : AppWidgetProvider() {
             }
 
             /*
-             * الوقت المتبقي الحقيقي بالملي ثانية.
+             * حساب الوقت المتبقي الحقيقي.
              */
             val remainingMillis =
                 (
-                    nextEvent.gregorianMillis -
-                        now
-                    ).coerceAtLeast(0L)
+                    nextEvent.gregorianMillis - now
+                ).coerceAtLeast(0L)
 
-            /*
-             * نحسب كل وحدة من نفس القيمة.
-             * لا يوجد عداد داخلي يمكن أن يتأخر عن ساعة الجوال.
-             */
             val totalMinutes =
                 TimeUnit.MILLISECONDS
                     .toMinutes(remainingMillis)
@@ -201,6 +181,9 @@ class RemainingWidget : AppWidgetProvider() {
             val minutes =
                 totalMinutes % 60L
 
+            /*
+             * البيانات الأساسية.
+             */
             views.setTextViewText(
                 R.id.remaining_event_name,
                 nextEvent.name
@@ -227,16 +210,7 @@ class RemainingWidget : AppWidgetProvider() {
             )
 
             /*
-             * التصميم الديناميكي:
-             *
-             * 3 وحدات:
-             * أيام | ساعات | دقائق
-             *
-             * إذا الأيام = 0:
-             * ساعات | دقائق
-             *
-             * إذا الأيام والساعات = 0:
-             * دقائق فقط
+             * إظهار وإخفاء وحدات الوقت تلقائيًا.
              */
             when {
 
@@ -296,14 +270,12 @@ class RemainingWidget : AppWidgetProvider() {
             }
 
             /*
-             * شريط التقدم.
+             * حساب نسبة التقدم.
              */
             val previousEvent =
-                RemainingEventSchedule
-                    .previousEvent(
-                        nextEvent,
-                        now
-                    )
+                RemainingEventSchedule.previousEvent(
+                    nextEvent
+                )
 
             val progress =
                 calculateProgress(
@@ -312,6 +284,9 @@ class RemainingWidget : AppWidgetProvider() {
                     now
                 )
 
+            /*
+             * تحديث شريط التقدم الرسومي.
+             */
             views.setProgressBar(
                 R.id.remaining_progress,
                 100,
@@ -320,7 +295,7 @@ class RemainingWidget : AppWidgetProvider() {
             )
 
             /*
-             * فتح التطبيق عند الضغط على الويدجت.
+             * الضغط على الويدجت يفتح التطبيق.
              */
             context.packageManager
                 .getLaunchIntentForPackage(
@@ -366,20 +341,20 @@ class RemainingWidget : AppWidgetProvider() {
             nowMillis: Long
         ): Int {
 
-            if (nextMillis <= nowMillis) {
-                return 100
+            /*
+             * أول مناسبة في القائمة:
+             * لا يوجد حدث سابق يمكن حساب النسبة منه.
+             */
+            if (previousMillis == null) {
+                return 0
             }
 
-            if (previousMillis == null) {
+            if (nextMillis <= previousMillis) {
                 return 0
             }
 
             val total =
                 nextMillis - previousMillis
-
-            if (total <= 0L) {
-                return 0
-            }
 
             val elapsed =
                 (nowMillis - previousMillis)
@@ -404,31 +379,25 @@ class RemainingWidget : AppWidgetProvider() {
             context: Context
         ) {
 
-            /*
-             * نحدد وقت التحديث بناءً على المناسبة القادمة.
-             */
             val now =
                 System.currentTimeMillis()
 
             val nextEvent =
-                RemainingEventSchedule
-                    .nextUpcoming(now)
+                RemainingEventSchedule.nextUpcoming(now)
 
             val remaining =
-                nextEvent
-                    ?.let {
-                        (
-                            it.gregorianMillis -
-                                now
-                        ).coerceAtLeast(0L)
-                    }
+                nextEvent?.let {
+                    (
+                        it.gregorianMillis - now
+                    ).coerceAtLeast(0L)
+                }
 
             /*
-             * إذا المناسبة خلال 24 ساعة:
+             * خلال آخر 24 ساعة:
              * تحديث كل دقيقة.
              *
-             * غير ذلك:
-             * كل 30 دقيقة لتقليل استهلاك البطارية.
+             * قبل ذلك:
+             * تحديث كل 30 دقيقة.
              */
             val interval =
                 if (
@@ -463,17 +432,8 @@ class RemainingWidget : AppWidgetProvider() {
                 ) as AlarmManager
 
             val triggerAt =
-                System.currentTimeMillis() +
-                    interval
+                System.currentTimeMillis() + interval
 
-            /*
-             * يسمح للنظام بإيقاظ التطبيق عند الحاجة،
-             * لكن Android قد يؤخر التنفيذ قليلًا بسبب
-             * توفير الطاقة.
-             *
-             * وهذا لا يؤثر على دقة الرقم لأن الحساب
-             * نفسه يعتمد على System.currentTimeMillis().
-             */
             alarmManager.setAndAllowWhileIdle(
                 AlarmManager.RTC,
                 triggerAt,
@@ -483,12 +443,17 @@ class RemainingWidget : AppWidgetProvider() {
     }
 }
 
+
+/*
+ * بيانات المناسبات.
+ */
 data class RemainingEvent(
     val name: String,
     val hijriDate: String,
     val gregorianDate: String,
     val gregorianMillis: Long
 )
+
 
 object RemainingEventSchedule {
 
@@ -524,45 +489,7 @@ object RemainingEventSchedule {
         return calendar.timeInMillis
     }
 
-    private fun formatGregorianDate(
-        year: Int,
-        month: Int,
-        day: Int
-    ): String {
-
-        val calendar =
-            Calendar.getInstance(
-                timeZone,
-                locale
-            )
-
-        calendar.clear()
-
-        calendar.set(
-            year,
-            month - 1,
-            day,
-            0,
-            0,
-            0
-        )
-
-        val formatter =
-            SimpleDateFormat(
-                "d MMMM yyyy",
-                locale
-            )
-
-        formatter.timeZone =
-            timeZone
-
-        return formatter.format(
-            calendar.time
-        )
-    }
-
-    private val events:
-        List<RemainingEvent> =
+    private val events =
         listOf(
 
             RemainingEvent(
@@ -620,8 +547,7 @@ object RemainingEventSchedule {
     }
 
     fun previousEvent(
-        nextEvent: RemainingEvent,
-        nowMillis: Long
+        nextEvent: RemainingEvent
     ): RemainingEvent? {
 
         val index =
@@ -632,41 +558,5 @@ object RemainingEventSchedule {
         }
 
         return events[index - 1]
-    }
-
-    fun localMidnightMillis(
-        nowMillis: Long
-    ): Long {
-
-        val calendar =
-            Calendar.getInstance(
-                timeZone,
-                locale
-            )
-
-        calendar.timeInMillis =
-            nowMillis
-
-        calendar.set(
-            Calendar.HOUR_OF_DAY,
-            0
-        )
-
-        calendar.set(
-            Calendar.MINUTE,
-            0
-        )
-
-        calendar.set(
-            Calendar.SECOND,
-            0
-        )
-
-        calendar.set(
-            Calendar.MILLISECOND,
-            0
-        )
-
-        return calendar.timeInMillis
     }
 }
