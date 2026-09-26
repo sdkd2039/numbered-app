@@ -53,7 +53,10 @@ class RemainingWidget : AppWidgetProvider() {
                 manager
                     .getAppWidgetIds(component)
                     .forEach { widgetId ->
-                        updateWidget(context, widgetId)
+                        updateWidget(
+                            context,
+                            widgetId
+                        )
                     }
 
                 scheduleNextUpdate(context)
@@ -85,6 +88,11 @@ class RemainingWidget : AppWidgetProvider() {
                     context.packageName,
                     R.layout.widget_remaining
                 )
+
+            /*
+             * تطبيق خط Zain على Remaining Widget فقط.
+             */
+            applyZainFont(views)
 
             /*
              * الوقت الحقيقي الحالي من الجهاز.
@@ -169,7 +177,6 @@ class RemainingWidget : AppWidgetProvider() {
 
             /*
              * أيام + ساعات + دقائق فقط.
-             *
              * لا توجد ثواني.
              */
             val days =
@@ -225,8 +232,7 @@ class RemainingWidget : AppWidgetProvider() {
             )
 
             /*
-             * دائمًا نعرض:
-             * الأيام + الساعات + الدقائق.
+             * عرض الأيام والساعات والدقائق دائمًا.
              */
             views.setViewVisibility(
                 R.id.remaining_days_box,
@@ -244,15 +250,16 @@ class RemainingWidget : AppWidgetProvider() {
             )
 
             /*
-             * حساب شريط التقدم.
-             *
-             * المناسبة السابقة ← الآن ← المناسبة الحالية
+             * المناسبة السابقة.
              */
             val previousEvent =
                 RemainingEventSchedule.previousEvent(
                     nextEvent
                 )
 
+            /*
+             * حساب شريط التقدم.
+             */
             val progress =
                 calculateProgress(
                     previousEvent?.gregorianMillis,
@@ -299,6 +306,39 @@ class RemainingWidget : AppWidgetProvider() {
         }
 
         /*
+         * تطبيق خط Zain على عناصر Remaining Widget فقط.
+         */
+        private fun applyZainFont(
+            views: RemoteViews
+        ) {
+
+            views.setTextViewTextAppearance(
+                R.id.remaining_event_name,
+                R.style.WidgetZainTextAppearance
+            )
+
+            views.setTextViewTextAppearance(
+                R.id.remaining_days,
+                R.style.WidgetZainTextAppearance
+            )
+
+            views.setTextViewTextAppearance(
+                R.id.remaining_hours,
+                R.style.WidgetZainTextAppearance
+            )
+
+            views.setTextViewTextAppearance(
+                R.id.remaining_minutes,
+                R.style.WidgetZainTextAppearance
+            )
+
+            views.setTextViewTextAppearance(
+                R.id.remaining_hijri_date,
+                R.style.WidgetZainTextAppearance
+            )
+        }
+
+        /*
          * تحديث الويدجت.
          */
         private fun updateAppWidget(
@@ -325,17 +365,10 @@ class RemainingWidget : AppWidgetProvider() {
             nowMillis: Long
         ): Int {
 
-            /*
-             * إذا لم توجد مناسبة سابقة،
-             * نبدأ من 0%.
-             */
             if (previousMillis == null) {
                 return 0
             }
 
-            /*
-             * حماية من التواريخ غير الصحيحة.
-             */
             if (nextMillis <= previousMillis) {
                 return 0
             }
@@ -385,11 +418,8 @@ class RemainingWidget : AppWidgetProvider() {
                 }
 
             /*
-             * إذا بقي أقل من 24 ساعة:
-             * تحديث كل دقيقة.
-             *
-             * غير ذلك:
-             * تحديث كل 30 دقيقة.
+             * أقل من 24 ساعة = تحديث كل دقيقة.
+             * أكثر من ذلك = تحديث كل 30 دقيقة.
              */
             val interval =
                 if (
@@ -461,10 +491,7 @@ object RemainingEventSchedule {
     /*
      * تحويل التاريخ إلى milliseconds.
      *
-     * الساعة:
-     * 00:00:00
-     *
-     * بتوقيت الرياض.
+     * الساعة 00:00:00 بتوقيت الرياض.
      */
     private fun dateMillis(
         year: Int,
@@ -494,16 +521,13 @@ object RemainingEventSchedule {
 
     /*
      * المناسبات.
-     *
-     * نضيف عيد الأضحى 2026 كمناسبة سابقة
-     * حتى يستطيع شريط رمضان 2027 حساب
-     * نسبة التقدم من المناسبة السابقة.
      */
     private val events =
         listOf(
 
             /*
-             * مناسبة سابقة فقط لحساب التقدم.
+             * آخر مناسبة سابقة.
+             * تستخدم فقط لحساب شريط التقدم.
              */
             RemainingEvent(
                 name = "عيد الأضحى المبارك",
@@ -517,7 +541,7 @@ object RemainingEventSchedule {
             ),
 
             /*
-             * رمضان 2027
+             * رمضان 2027.
              */
             RemainingEvent(
                 name = "شهر رمضان المبارك",
@@ -531,7 +555,7 @@ object RemainingEventSchedule {
             ),
 
             /*
-             * عيد الفطر 2027
+             * عيد الفطر 2027.
              */
             RemainingEvent(
                 name = "عيد الفطر المبارك",
@@ -545,7 +569,7 @@ object RemainingEventSchedule {
             ),
 
             /*
-             * عشر ذي الحجة 2027
+             * عشر ذي الحجة 2027.
              */
             RemainingEvent(
                 name = "عشر ذي الحجة",
@@ -559,7 +583,7 @@ object RemainingEventSchedule {
             ),
 
             /*
-             * عيد الأضحى 2027
+             * عيد الأضحى 2027.
              */
             RemainingEvent(
                 name = "عيد الأضحى المبارك",
@@ -574,7 +598,7 @@ object RemainingEventSchedule {
         )
 
     /*
-     * الحصول على أقرب مناسبة قادمة.
+     * أقرب مناسبة قادمة.
      */
     fun nextUpcoming(
         nowMillis: Long
@@ -586,8 +610,7 @@ object RemainingEventSchedule {
     }
 
     /*
-     * الحصول على المناسبة السابقة
-     * للمناسبة القادمة.
+     * المناسبة السابقة للمناسبة القادمة.
      */
     fun previousEvent(
         nextEvent: RemainingEvent
