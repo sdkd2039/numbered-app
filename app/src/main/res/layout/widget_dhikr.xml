@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -8,16 +9,36 @@
     android:padding="10dp"
     android:background="@drawable/dhikr_widget_background">
 
-    <TextView
-        android:id="@+id/dhikr_category"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:text="أذكار الصباح"
-        android:textAppearance="@style/WidgetZainTextAppearance"
-        android:textColor="#DCE8F5"
-        android:textSize="12sp"
-        android:textStyle="bold" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layoutDirection="rtl">
+
+        <ImageView
+            android:id="@+id/dhikr_logo"
+            android:layout_width="58dp"
+            android:layout_height="34dp"
+            android:layout_marginStart="6dp"
+            android:contentDescription="الذكر"
+            android:scaleType="centerInside"
+            android:src="@drawable/male" />
+
+        <TextView
+            android:id="@+id/dhikr_category"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_vertical|start"
+            android:text="الصباح"
+            android:textAppearance="@style/WidgetZainTextAppearance"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+    </LinearLayout>
 
     <TextView
         android:id="@+id/dhikr_text"
@@ -55,7 +76,7 @@
             android:textAppearance="@style/WidgetZainTextAppearance"
             android:textColor="#FFFFFF"
             android:textSize="24sp"
-            android:textStyle="bold" />
+            android:maxLines="1" />
 
         <TextView
             android:id="@+id/dhikr_target"
@@ -65,7 +86,8 @@
             android:text="من 0"
             android:textAppearance="@style/WidgetZainTextAppearance"
             android:textColor="#AEBBCC"
-            android:textSize="9sp" />
+            android:textSize="9sp"
+            android:maxLines="1" />
 
     </LinearLayout>
 
