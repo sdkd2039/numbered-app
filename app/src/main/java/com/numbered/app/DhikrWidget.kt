@@ -37,12 +37,6 @@ class DhikrWidget : AppWidgetProvider() {
 
         private const val DEFAULT_CATEGORY =
             "الصباح"
-
-        /*
-         * خط Zain لهذا الويدجت فقط.
-         */
-        private const val ZAIN_APPEARANCE =
-            R.style.WidgetZainTextAppearance
     }
 
     override fun onUpdate(
@@ -76,10 +70,6 @@ class DhikrWidget : AppWidgetProvider() {
 
         when (intent.action) {
 
-            /*
-             * زيادة العداد:
-             * 0 → 1 → 2 → 3 ...
-             */
             ACTION_INCREMENT -> {
                 increment(
                     context,
@@ -87,9 +77,6 @@ class DhikrWidget : AppWidgetProvider() {
                 )
             }
 
-            /*
-             * الذكر التالي.
-             */
             ACTION_NEXT -> {
                 move(
                     context,
@@ -98,9 +85,6 @@ class DhikrWidget : AppWidgetProvider() {
                 )
             }
 
-            /*
-             * الذكر السابق.
-             */
             ACTION_PREVIOUS -> {
                 move(
                     context,
@@ -109,9 +93,6 @@ class DhikrWidget : AppWidgetProvider() {
                 )
             }
 
-            /*
-             * إعادة العداد إلى صفر.
-             */
             ACTION_RESET -> {
                 reset(
                     context,
@@ -121,9 +102,6 @@ class DhikrWidget : AppWidgetProvider() {
         }
     }
 
-    /*
-     * زيادة عداد الذكر.
-     */
     private fun increment(
         context: Context,
         widgetId: Int
@@ -188,14 +166,6 @@ class DhikrWidget : AppWidgetProvider() {
                 0
             )
 
-        /*
-         * زيادة واحدة فقط.
-         *
-         * مثال:
-         * 0 → 1
-         * 1 → 2
-         * 2 → 3
-         */
         val newCount =
             (current + 1).coerceAtMost(
                 item.count
@@ -215,9 +185,6 @@ class DhikrWidget : AppWidgetProvider() {
         )
     }
 
-    /*
-     * الانتقال للذكر السابق أو التالي.
-     */
     private fun move(
         context: Context,
         widgetId: Int,
@@ -273,25 +240,14 @@ class DhikrWidget : AppWidgetProvider() {
 
         index += direction
 
-        /*
-         * إذا وصلنا قبل أول ذكر،
-         * ننتقل إلى آخر ذكر.
-         */
         if (index < 0) {
             index = list.lastIndex
         }
 
-        /*
-         * إذا تجاوزنا آخر ذكر،
-         * نعود إلى أول ذكر.
-         */
         if (index > list.lastIndex) {
             index = 0
         }
 
-        /*
-         * عند تغيير الذكر يرجع العداد إلى صفر.
-         */
         prefs.edit()
             .putInt(
                 KEY_INDEX_PREFIX + widgetId,
@@ -310,9 +266,6 @@ class DhikrWidget : AppWidgetProvider() {
         )
     }
 
-    /*
-     * إعادة عداد الذكر الحالي إلى صفر.
-     */
     private fun reset(
         context: Context,
         widgetId: Int
@@ -337,9 +290,6 @@ class DhikrWidget : AppWidgetProvider() {
         )
     }
 
-    /*
-     * تحديث شكل الويدجت.
-     */
     private fun updateWidget(
         context: Context,
         manager: AppWidgetManager,
@@ -352,18 +302,9 @@ class DhikrWidget : AppWidgetProvider() {
                 R.layout.widget_dhikr
             )
 
-        /*
-         * تطبيق خط Zain على عناصر
-         * Dhikr Widget فقط.
-         */
-        applyFont(views)
-
         val data =
             DhikrRepository.load(context)
 
-        /*
-         * في حال فشل قراءة CSV.
-         */
         if (data.isEmpty()) {
 
             views.setTextViewText(
@@ -406,10 +347,6 @@ class DhikrWidget : AppWidgetProvider() {
                 DEFAULT_CATEGORY
             ) ?: DEFAULT_CATEGORY
 
-        /*
-         * محاولة عرض فئة الصباح.
-         * إذا لم توجد، نستخدم جميع البيانات.
-         */
         val list =
             data.filter {
                 normalizeCategory(it.category) ==
@@ -448,9 +385,6 @@ class DhikrWidget : AppWidgetProvider() {
             return
         }
 
-        /*
-         * تحديد الذكر الحالي.
-         */
         var index =
             prefs.getInt(
                 KEY_INDEX_PREFIX + widgetId,
@@ -466,9 +400,6 @@ class DhikrWidget : AppWidgetProvider() {
         val item =
             list[index]
 
-        /*
-         * قراءة العداد الحالي.
-         */
         var current =
             prefs.getInt(
                 KEY_COUNT_PREFIX + widgetId,
@@ -481,41 +412,26 @@ class DhikrWidget : AppWidgetProvider() {
                 item.count
             )
 
-        /*
-         * الفئة.
-         */
         views.setTextViewText(
             R.id.dhikr_category,
             item.category
         )
 
-        /*
-         * نص الذكر.
-         */
         views.setTextViewText(
             R.id.dhikr_text,
             item.text
         )
 
-        /*
-         * العداد الحالي.
-         */
         views.setTextViewText(
             R.id.dhikr_count,
             current.toString()
         )
 
-        /*
-         * العدد المطلوب.
-         */
         views.setTextViewText(
             R.id.dhikr_target,
             "من ${item.count}"
         )
 
-        /*
-         * شريط التقدم.
-         */
         views.setProgressBar(
             R.id.dhikr_progress,
             item.count,
@@ -523,9 +439,6 @@ class DhikrWidget : AppWidgetProvider() {
             false
         )
 
-        /*
-         * زر التالي.
-         */
         views.setOnClickPendingIntent(
             R.id.dhikr_next,
             actionIntent(
@@ -535,9 +448,6 @@ class DhikrWidget : AppWidgetProvider() {
             )
         )
 
-        /*
-         * زر السابق.
-         */
         views.setOnClickPendingIntent(
             R.id.dhikr_previous,
             actionIntent(
@@ -547,9 +457,6 @@ class DhikrWidget : AppWidgetProvider() {
             )
         )
 
-        /*
-         * زر إعادة العداد.
-         */
         views.setOnClickPendingIntent(
             R.id.dhikr_reset,
             actionIntent(
@@ -559,11 +466,6 @@ class DhikrWidget : AppWidgetProvider() {
             )
         )
 
-        /*
-         * الضغط على العداد:
-         *
-         * 0 → 1 → 2 → 3 → ...
-         */
         views.setOnClickPendingIntent(
             R.id.dhikr_counter_area,
             createIncrementIntent(
@@ -578,9 +480,6 @@ class DhikrWidget : AppWidgetProvider() {
         )
     }
 
-    /*
-     * إنشاء أمر زيادة العداد.
-     */
     private fun createIncrementIntent(
         context: Context,
         widgetId: Int
@@ -591,7 +490,9 @@ class DhikrWidget : AppWidgetProvider() {
                 context,
                 DhikrWidget::class.java
             ).apply {
-                action = ACTION_INCREMENT
+
+                action =
+                    ACTION_INCREMENT
 
                 putExtra(
                     AppWidgetManager.EXTRA_APPWIDGET_ID,
@@ -608,9 +509,6 @@ class DhikrWidget : AppWidgetProvider() {
         )
     }
 
-    /*
-     * إنشاء PendingIntent للأزرار.
-     */
     private fun actionIntent(
         context: Context,
         action: String,
@@ -657,54 +555,6 @@ class DhikrWidget : AppWidgetProvider() {
         )
     }
 
-    /*
-     * تفعيل خط Zain على ويدجت الأذكار فقط.
-     *
-     * لا يتم تغيير خط التطبيق بالكامل.
-     */
-    private fun applyFont(
-        views: RemoteViews
-    ) {
-
-        views.setTextViewTextAppearance(
-            R.id.dhikr_category,
-            ZAIN_APPEARANCE
-        )
-
-        views.setTextViewTextAppearance(
-            R.id.dhikr_text,
-            ZAIN_APPEARANCE
-        )
-
-        views.setTextViewTextAppearance(
-            R.id.dhikr_count,
-            ZAIN_APPEARANCE
-        )
-
-        views.setTextViewTextAppearance(
-            R.id.dhikr_target,
-            ZAIN_APPEARANCE
-        )
-
-        views.setTextViewTextAppearance(
-            R.id.dhikr_previous,
-            ZAIN_APPEARANCE
-        )
-
-        views.setTextViewTextAppearance(
-            R.id.dhikr_reset,
-            ZAIN_APPEARANCE
-        )
-
-        views.setTextViewTextAppearance(
-            R.id.dhikr_next,
-            ZAIN_APPEARANCE
-        )
-    }
-
-    /*
-     * توحيد كتابة اسم الفئة.
-     */
     private fun normalizeCategory(
         value: String
     ): String {
