@@ -3,48 +3,49 @@ package com.numbered.app
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.view.View
+import android.graphics.Color
 import android.widget.RemoteViews
 
 class DhikrWidget : AppWidgetProvider() {
 
+    companion object {
+        private const val ACTION_NEXT =
+            "com.numbered.app.DHIKR_NEXT"
+
+        private const val ACTION_PREVIOUS =
+            "com.numbered.app.DHIKR_PREVIOUS"
+
+        private const val ACTION_RESET =
+            "com.numbered.app.DHIKR_RESET"
+
+        private const val PREFS =
+            "dhikr_widget_state"
+
+        private const val KEY_INDEX_PREFIX =
+            "index_"
+
+        private const val KEY_COUNT_PREFIX =
+            "count_"
+
+        private const val KEY_CATEGORY_PREFIX =
+            "category_"
+
+        private const val DEFAULT_CATEGORY =
+            "الصباح"
+
+        private const val ZAIN_APPEARANCE =
+            R.style.WidgetZainTextAppearance
+    }
+
     override fun onUpdate(
         context: Context,
-        manager: AppWidgetManager,
-        ids: IntArray
+        appWidgetManager: AppWidgetManager,
+        appWidgetIds: IntArray
     ) {
-        ids.forEach { widgetId ->
-            render(
-                context,
-                widgetId,
-                DhikrRepository.loadCached(context)
-            )
-        }
-
-        DhikrRepository.refresh(context) { data ->
-
-            val appWidgetManager =
-                AppWidgetManager.getInstance(context)
-
-            val component =
-                ComponentName(
-                    context,
-                    DhikrWidget::class.java
-                )
-
-            appWidgetManager
-                .getAppWidgetIds(component)
-                .forEach { widgetId ->
-
-                    render(
-                        context,
-                        widgetId,
-                        data
-                    )
-                }
+        appWidgetIds.forEach { widgetId ->
+            updateWidget(context, appWidgetManager, widgetId)
         }
     }
 
@@ -54,678 +55,333 @@ class DhikrWidget : AppWidgetProvider() {
     ) {
         super.onReceive(context, intent)
 
-        val widgetId =
-            intent.getIntExtra(
-                AppWidgetManager.EXTRA_APPWIDGET_ID,
-                AppWidgetManager.INVALID_APPWIDGET_ID
-            )
-
-        if (
-            widgetId ==
+        val widgetId = intent.getIntExtra(
+            AppWidgetManager.EXTRA_APPWIDGET_ID,
             AppWidgetManager.INVALID_APPWIDGET_ID
-        ) {
-            return
-        }
+        )
+
+        if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return
 
         when (intent.action) {
-
-            ACTION_PREVIOUS,
-            ACTION_NEXT,
-            ACTION_GROUP_PREVIOUS,
-            ACTION_GROUP_NEXT,
-            ACTION_TAP,
-            ACTION_RESET -> {
-
-                val data =
-                    DhikrRepository.loadCached(context)
-
-                if (data.isNotEmpty()) {
-
-                    when (intent.action) {
-
-                        ACTION_TAP -> incrementCounter(
-                            context,
-                            widgetId,
-                            data
-                        )
-
-                        ACTION_RESET -> resetCounter(
-                            context,
-                            widgetId
-                        )
-
-                        else -> move(
-                            context,
-                            widgetId,
-                            data,
-                            intent.action!!
-                        )
-                    }
-
-                    render(
-                        context,
-                        widgetId,
-                        data
-                    )
-                }
-            }
+            ACTION_NEXT -> move(context, widgetId, 1)
+            ACTION_PREVIOUS -> move(context, widgetId, -1)
+            ACTION_RESET -> reset(context, widgetId)
         }
     }
 
-    companion object {
+    private fun move(
+        context: Context,
+        widgetId: Int,
+        direction: Int
+    ) {
+        val data = DhikrRepository.load(context)
+        if (data.isEmpty()) {
+            updateWidget(context, AppWidgetManager.getInstance(context), widgetId)
+            return
+        }
 
-        private const val PREFS =
-            "dhikr_widget_state"
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
-        private const val KEY_GROUP =
-            "group_"
+        val category = prefs.getString(
+            KEY_CATEGORY_PREFIX + widgetId,
+            DEFAULT_CATEGORY
+        ) ?: DEFAULT_CATEGORY
 
-        private const val KEY_INDEX =
-            "index_"
+        val list = data.filter {
+            normalizeCategory(it.category) == normalizeCategory(category)
+        }
 
-        private const val KEY_COUNT =
-            "count_"
+        if (list.isEmpty()) {
+            updateWidget(context, AppWidgetManager.getInstance(context), widgetId)
+            return
+        }
 
-        const val ACTION_PREVIOUS =
-            "com.numbered.app.action.DHIKR_PREVIOUS"
+        var index = prefs.getInt(
+            KEY_INDEX_PREFIX + widgetId,
+            0
+        )
 
-        const val ACTION_NEXT =
-            "com.numbered.app.action.DHIKR_NEXT"
+        index += direction
 
-        const val ACTION_GROUP_PREVIOUS =
-            "com.numbered.app.action.DHIKR_GROUP_PREVIOUS"
+        if (index < 0) {
+            index = list.lastIndex
+        }
 
-        const val ACTION_GROUP_NEXT =
-            "com.numbered.app.action.DHIKR_GROUP_NEXT"
+        if (index > list.lastIndex) {
+            index = 0
+        }
 
-        const val ACTION_TAP =
-            "com.numbered.app.action.DHIKR_TAP"
-
-        const val ACTION_RESET =
-            "com.numbered.app.action.DHIKR_RESET"
-
-
-        private fun render(
-            context: Context,
-            widgetId: Int,
-            data: List<DhikrEntry>
-        ) {
-
-            val views =
-                RemoteViews(
-                    context.packageName,
-                    R.layout.widget_dhikr
-                )
-
-            val groups =
-                data
-                    .map { it.group }
-                    .distinct()
-
-            val prefs =
-                context.getSharedPreferences(
-                    PREFS,
-                    Context.MODE_PRIVATE
-                )
-
-            val groupIndex =
-                if (groups.isEmpty()) {
-                    0
-                } else {
-                    prefs
-                        .getInt(
-                            KEY_GROUP + widgetId,
-                            0
-                        )
-                        .coerceIn(
-                            0,
-                            groups.lastIndex
-                        )
-                }
-
-            val entries =
-                if (groups.isEmpty()) {
-                    emptyList()
-                } else {
-                    data.filter {
-                        it.group ==
-                            groups[groupIndex]
-                    }
-                }
-
-            val entryIndex =
-                if (entries.isEmpty()) {
-                    0
-                } else {
-                    prefs
-                        .getInt(
-                            KEY_INDEX + widgetId,
-                            0
-                        )
-                        .coerceIn(
-                            0,
-                            entries.lastIndex
-                        )
-                }
-
-            val entry =
-                entries.getOrNull(entryIndex)
-
-            val selectedGroup =
-                if (groups.isEmpty()) {
-                    "الذكر"
-                } else {
-                    groups[groupIndex]
-                }
-
-            val targetCount =
-                parseCount(
-                    entry?.count
-                )
-
-            val currentCount =
-                prefs
-                    .getInt(
-                        KEY_COUNT + widgetId,
-                        0
-                    )
-                    .let { saved ->
-
-                        if (targetCount > 0) {
-                            saved.coerceIn(
-                                0,
-                                targetCount
-                            )
-                        } else {
-                            saved.coerceAtLeast(0)
-                        }
-                    }
-
-            val selectedProgress =
-                if (entries.isEmpty()) {
-                    ""
-                } else {
-                    "${entryIndex + 1} / ${entries.size}"
-                }
-
-            views.setTextViewText(
-                R.id.dhikr_group,
-                selectedGroup
+        prefs.edit()
+            .putInt(KEY_INDEX_PREFIX + widgetId, index)
+            .putInt(
+                KEY_COUNT_PREFIX + widgetId,
+                0
             )
+            .apply()
 
+        updateWidget(
+            context,
+            AppWidgetManager.getInstance(context),
+            widgetId
+        )
+    }
+
+    private fun reset(
+        context: Context,
+        widgetId: Int
+    ) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putInt(KEY_COUNT_PREFIX + widgetId, 0)
+            .apply()
+
+        updateWidget(
+            context,
+            AppWidgetManager.getInstance(context),
+            widgetId
+        )
+    }
+
+    private fun updateWidget(
+        context: Context,
+        manager: AppWidgetManager,
+        widgetId: Int
+    ) {
+        val views = RemoteViews(
+            context.packageName,
+            R.layout.widget_dhikr
+        )
+
+        val data = DhikrRepository.load(context)
+
+        if (data.isEmpty()) {
             views.setTextViewText(
                 R.id.dhikr_text,
-                entry?.text
-                    ?: "لا توجد بيانات متاحة"
+                "تعذر قراءة بيانات الأذكار"
             )
 
             views.setTextViewText(
-                R.id.dhikr_count_label,
-
-                if (targetCount > 0) {
-                    "عدد المرات: $targetCount"
-                } else {
-                    ""
-                }
+                R.id.dhikr_count,
+                "0"
             )
 
-            views.setTextViewText(
-                R.id.dhikr_counter_card,
+            applyFont(views)
 
-                if (targetCount > 0) {
-                    "$currentCount / $targetCount"
-                } else {
-                    currentCount.toString()
-                }
-            )
-
-            views.setTextViewText(
-                R.id.dhikr_progress,
-                selectedProgress
-            )
-
-            views.setViewVisibility(
-                R.id.dhikr_group_previous,
-
-                if (groups.size > 1)
-                    View.VISIBLE
-                else
-                    View.GONE
-            )
-
-            views.setViewVisibility(
-                R.id.dhikr_group_next,
-
-                if (groups.size > 1)
-                    View.VISIBLE
-                else
-                    View.GONE
-            )
-
-            views.setViewVisibility(
-                R.id.dhikr_counter_card,
-
-                if (entry != null)
-                    View.VISIBLE
-                else
-                    View.GONE
-            )
-
-            views.setViewVisibility(
-                R.id.dhikr_count_label,
-
-                if (targetCount > 0)
-                    View.VISIBLE
-                else
-                    View.GONE
-            )
-
-            views.setViewVisibility(
-                R.id.dhikr_progress,
-
-                if (selectedProgress.isNotBlank())
-                    View.VISIBLE
-                else
-                    View.GONE
-            )
-
-            /*
-             * السابق
-             */
-
-            bind(
-                views,
-                context,
-                widgetId,
-                R.id.dhikr_previous,
-                ACTION_PREVIOUS
-            )
-
-            /*
-             * التالي
-             */
-
-            bind(
-                views,
-                context,
-                widgetId,
-                R.id.dhikr_next,
-                ACTION_NEXT
-            )
-
-            /*
-             * المجموعة السابقة
-             */
-
-            bind(
-                views,
-                context,
-                widgetId,
-                R.id.dhikr_group_previous,
-                ACTION_GROUP_PREVIOUS
-            )
-
-            /*
-             * المجموعة التالية
-             */
-
-            bind(
-                views,
-                context,
-                widgetId,
-                R.id.dhikr_group_next,
-                ACTION_GROUP_NEXT
-            )
-
-            /*
-             * الضغط على الذكر = زيادة العداد
-             */
-
-            bind(
-                views,
-                context,
-                widgetId,
-                R.id.dhikr_text,
-                ACTION_TAP
-            )
-
-            /*
-             * الضغط على العداد = زيادة العداد
-             */
-
-            bind(
-                views,
-                context,
-                widgetId,
-                R.id.dhikr_counter_card,
-                ACTION_TAP
-            )
-
-            /*
-             * ترتيب الذكر = زيادة العداد
-             */
-
-            bind(
-                views,
-                context,
-                widgetId,
-                R.id.dhikr_progress,
-                ACTION_TAP
-            )
-
-            /*
-             * زر إعادة العداد = 0
-             */
-
-            bind(
-                views,
-                context,
-                widgetId,
-                R.id.dhikr_reset,
-                ACTION_RESET
-            )
-
-            AppWidgetManager
-                .getInstance(context)
-                .updateAppWidget(
-                    widgetId,
-                    views
-                )
+            manager.updateAppWidget(widgetId, views)
+            return
         }
 
+        val prefs = context.getSharedPreferences(
+            PREFS,
+            Context.MODE_PRIVATE
+        )
 
-        private fun incrementCounter(
-            context: Context,
-            widgetId: Int,
-            data: List<DhikrEntry>
-        ) {
+        val category = prefs.getString(
+            KEY_CATEGORY_PREFIX + widgetId,
+            DEFAULT_CATEGORY
+        ) ?: DEFAULT_CATEGORY
 
-            val prefs =
-                context.getSharedPreferences(
-                    PREFS,
-                    Context.MODE_PRIVATE
-                )
-
-            val groups =
-                data
-                    .map { it.group }
-                    .distinct()
-
-            if (groups.isEmpty()) {
-                return
-            }
-
-            val groupIndex =
-                prefs
-                    .getInt(
-                        KEY_GROUP + widgetId,
-                        0
-                    )
-                    .coerceIn(
-                        0,
-                        groups.lastIndex
-                    )
-
-            val entries =
-                data.filter {
-                    it.group ==
-                        groups[groupIndex]
-                }
-
-            if (entries.isEmpty()) {
-                return
-            }
-
-            val entryIndex =
-                prefs
-                    .getInt(
-                        KEY_INDEX + widgetId,
-                        0
-                    )
-                    .coerceIn(
-                        0,
-                        entries.lastIndex
-                    )
-
-            val entry =
-                entries[entryIndex]
-
-            val targetCount =
-                parseCount(entry.count)
-
-            val currentCount =
-                prefs.getInt(
-                    KEY_COUNT + widgetId,
-                    0
-                )
-
-            val newCount =
-                if (targetCount > 0) {
-
-                    (currentCount + 1)
-                        .coerceAtMost(targetCount)
-
-                } else {
-
-                    currentCount + 1
-                }
-
-            prefs
-                .edit()
-                .putInt(
-                    KEY_COUNT + widgetId,
-                    newCount
-                )
-                .apply()
+        val list = data.filter {
+            normalizeCategory(it.category) == normalizeCategory(category)
+        }.ifEmpty {
+            data
         }
 
+        var index = prefs.getInt(
+            KEY_INDEX_PREFIX + widgetId,
+            0
+        )
 
-        private fun resetCounter(
-            context: Context,
-            widgetId: Int
-        ) {
+        index = index.coerceIn(0, list.lastIndex)
 
-            context
-                .getSharedPreferences(
-                    PREFS,
-                    Context.MODE_PRIVATE
-                )
-                .edit()
-                .putInt(
-                    KEY_COUNT + widgetId,
-                    0
-                )
-                .apply()
-        }
+        val item = list[index]
 
+        var current = prefs.getInt(
+            KEY_COUNT_PREFIX + widgetId,
+            0
+        )
 
-        private fun bind(
-            views: RemoteViews,
-            context: Context,
-            widgetId: Int,
-            viewId: Int,
-            action: String
-        ) {
+        current = current.coerceIn(0, item.count)
 
-            val intent =
-                Intent(
-                    context,
-                    DhikrWidget::class.java
-                ).apply {
+        views.setTextViewText(
+            R.id.dhikr_category,
+            item.category
+        )
 
-                    this.action =
-                        action
+        views.setTextViewText(
+            R.id.dhikr_text,
+            item.text
+        )
 
-                    putExtra(
-                        AppWidgetManager.EXTRA_APPWIDGET_ID,
-                        widgetId
-                    )
-                }
+        views.setTextViewText(
+            R.id.dhikr_count,
+            current.toString()
+        )
 
-            views.setOnClickPendingIntent(
+        views.setTextViewText(
+            R.id.dhikr_target,
+            "من ${item.count}"
+        )
 
-                viewId,
+        views.setProgressBar(
+            R.id.dhikr_progress,
+            item.count,
+            current,
+            false
+        )
 
-                PendingIntent.getBroadcast(
+        applyFont(views)
 
-                    context,
+        views.setOnClickPendingIntent(
+            R.id.dhikr_next,
+            actionIntent(
+                context,
+                ACTION_NEXT,
+                widgetId
+            )
+        )
 
-                    widgetId * 10 + viewId,
+        views.setOnClickPendingIntent(
+            R.id.dhikr_previous,
+            actionIntent(
+                context,
+                ACTION_PREVIOUS,
+                widgetId
+            )
+        )
 
-                    intent,
+        views.setOnClickPendingIntent(
+            R.id.dhikr_reset,
+            actionIntent(
+                context,
+                ACTION_RESET,
+                widgetId
+            )
+        )
 
-                    PendingIntent.FLAG_UPDATE_CURRENT or
-                        PendingIntent.FLAG_IMMUTABLE
-                )
+        /*
+         * الضغط على العداد نفسه:
+         * 0 → 1 → 2 → 3 ...
+         */
+        views.setOnClickPendingIntent(
+            R.id.dhikr_counter_area,
+            createIncrementIntent(
+                context,
+                widgetId
+            )
+        )
+
+        manager.updateAppWidget(widgetId, views)
+    }
+
+    private fun createIncrementIntent(
+        context: Context,
+        widgetId: Int
+    ): PendingIntent {
+        val intent = Intent(
+            context,
+            DhikrWidget::class.java
+        ).apply {
+            action = "com.numbered.app.DHIKR_INCREMENT"
+            putExtra(
+                AppWidgetManager.EXTRA_APPWIDGET_ID,
+                widgetId
             )
         }
 
+        return PendingIntent.getBroadcast(
+            context,
+            widgetId * 10 + 4,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or
+                PendingIntent.FLAG_IMMUTABLE
+        )
+    }
 
-        private fun move(
-            context: Context,
-            widgetId: Int,
-            data: List<DhikrEntry>,
-            action: String
-        ) {
+    override fun onReceiveCompat(
+        context: Context,
+        intent: Intent
+    ) {
+        // غير مستخدمة.
+    }
 
-            val groups =
-                data
-                    .map { it.group }
-                    .distinct()
-
-            if (groups.isEmpty()) {
-                return
-            }
-
-            val prefs =
-                context.getSharedPreferences(
-                    PREFS,
-                    Context.MODE_PRIVATE
-                )
-
-            var groupIndex =
-                prefs
-                    .getInt(
-                        KEY_GROUP + widgetId,
-                        0
-                    )
-                    .coerceIn(
-                        0,
-                        groups.lastIndex
-                    )
-
-            var entryIndex =
-                prefs.getInt(
-                    KEY_INDEX + widgetId,
-                    0
-                )
-
-            if (
-                action ==
-                    ACTION_GROUP_PREVIOUS ||
-                action ==
-                    ACTION_GROUP_NEXT
-            ) {
-
-                val delta =
-                    if (
-                        action ==
-                            ACTION_GROUP_NEXT
-                    ) {
-                        1
-                    } else {
-                        -1
-                    }
-
-                groupIndex =
-                    (
-                        groupIndex +
-                            delta +
-                            groups.size
-                    ) % groups.size
-
-                entryIndex = 0
-
-            } else {
-
-                val entries =
-                    data.filter {
-                        it.group ==
-                            groups[groupIndex]
-                    }
-
-                if (entries.isEmpty()) {
-                    return
-                }
-
-                val delta =
-                    if (
-                        action ==
-                            ACTION_NEXT
-                    ) {
-                        1
-                    } else {
-                        -1
-                    }
-
-                entryIndex =
-                    (
-                        entryIndex +
-                            delta +
-                            entries.size
-                    ) % entries.size
-            }
-
-            prefs
-                .edit()
-                .putInt(
-                    KEY_GROUP + widgetId,
-                    groupIndex
-                )
-                .putInt(
-                    KEY_INDEX + widgetId,
-                    entryIndex
-                )
-                .putInt(
-                    KEY_COUNT + widgetId,
-                    0
-                )
-                .apply()
+    private fun actionIntent(
+        context: Context,
+        action: String,
+        widgetId: Int
+    ): PendingIntent {
+        val intent = Intent(
+            context,
+            DhikrWidget::class.java
+        ).apply {
+            this.action = action
+            putExtra(
+                AppWidgetManager.EXTRA_APPWIDGET_ID,
+                widgetId
+            )
         }
 
-
-        private fun parseCount(
-            raw: String?
-        ): Int {
-
-            val normalized =
-                raw
-                    .orEmpty()
-                    .trim()
-                    .map { char ->
-
-                        when (char) {
-
-                            '٠' -> '0'
-                            '١' -> '1'
-                            '٢' -> '2'
-                            '٣' -> '3'
-                            '٤' -> '4'
-                            '٥' -> '5'
-                            '٦' -> '6'
-                            '٧' -> '7'
-                            '٨' -> '8'
-                            '٩' -> '9'
-
-                            else -> char
-                        }
-                    }
-                    .joinToString("")
-
-            return normalized
-                .filter { it.isDigit() }
-                .toIntOrNull()
-                ?: 0
+        val requestCode = when (action) {
+            ACTION_NEXT -> widgetId * 10 + 1
+            ACTION_PREVIOUS -> widgetId * 10 + 2
+            ACTION_RESET -> widgetId * 10 + 3
+            else -> widgetId * 10 + 9
         }
+
+        return PendingIntent.getBroadcast(
+            context,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or
+                PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    private fun applyFont(
+        views: RemoteViews
+    ) {
+        views.setTextViewTextAppearance(
+            R.id.dhikr_category,
+            ZAIN_APPEARANCE
+        )
+
+        views.setTextViewTextAppearance(
+            R.id.dhikr_text,
+            ZAIN_APPEARANCE
+        )
+
+        views.setTextViewTextAppearance(
+            R.id.dhikr_count,
+            ZAIN_APPEARANCE
+        )
+
+        views.setTextViewTextAppearance(
+            R.id.dhikr_target,
+            ZAIN_APPEARANCE
+        )
+
+        views.setTextViewTextAppearance(
+            R.id.dhikr_previous,
+            ZAIN_APPEARANCE
+        )
+
+        views.setTextViewTextAppearance(
+            R.id.dhikr_reset,
+            ZAIN_APPEARANCE
+        )
+
+        views.setTextViewTextAppearance(
+            R.id.dhikr_next,
+            ZAIN_APPEARANCE
+        )
+    }
+
+    private fun normalizeCategory(value: String): String {
+        return value
+            .trim()
+            .replace("أ", "ا")
+            .replace("إ", "ا")
+            .replace("آ", "ا")
+            .replace("ة", "ه")
     }
 }
