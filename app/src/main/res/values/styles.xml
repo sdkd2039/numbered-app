@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <resources>
 
-    <style name="WidgetZainTextAppearance"
-        parent="@android:style/TextAppearance.Material.Body1">
-
+    <style name="WidgetZainTextAppearance">
+        <item name="android:fontFamily">@font/zain_bold</item>
         <item name="android:textStyle">normal</item>
-
+        <item name="android:textColor">#FFFFFF</item>
     </style>
 
 </resources>
