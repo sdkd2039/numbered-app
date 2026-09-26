@@ -141,9 +141,10 @@ class RemainingWidget : AppWidgetProvider() {
                     View.VISIBLE
                 )
 
+                // إخفاء الدقائق
                 views.setViewVisibility(
                     R.id.remaining_minutes_box,
-                    View.VISIBLE
+                    View.GONE
                 )
 
                 views.setProgressBar(
@@ -226,9 +227,10 @@ class RemainingWidget : AppWidgetProvider() {
                 View.VISIBLE
             )
 
+            // إخفاء الدقائق
             views.setViewVisibility(
                 R.id.remaining_minutes_box,
-                View.VISIBLE
+                View.GONE
             )
 
             val previousEvent =
