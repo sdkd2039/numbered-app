@@ -20,30 +20,48 @@
             </intent-filter>
         </activity>
 
+        <!-- ويدجت المتبقي -->
         <receiver
             android:name=".RemainingWidget"
             android:exported="false">
+
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+
+                <!-- تغيير التاريخ -->
                 <action android:name="android.intent.action.DATE_CHANGED" />
+
+                <!-- تغيير ساعة الجهاز -->
                 <action android:name="android.intent.action.TIME_SET" />
+
+                <!-- تغيير المنطقة الزمنية -->
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+
+                <!-- تحديث الويدجت الخاص بنا -->
+                <action android:name="com.numbered.app.action.REMAINING_REFRESH" />
             </intent-filter>
+
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_remaining_info" />
+
         </receiver>
 
+        <!-- ويدجت الذكر -->
         <receiver
             android:name=".DhikrWidget"
             android:exported="false">
+
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
+
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_dhikr_info" />
+
         </receiver>
 
     </application>
+
 </manifest>
