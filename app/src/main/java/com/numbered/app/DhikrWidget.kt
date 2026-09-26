@@ -330,7 +330,7 @@ class DhikrWidget : AppWidgetProvider() {
             )
 
             /*
-             * أزرار التنقل بين الأذكار
+             * السابق
              */
 
             bind(
@@ -341,6 +341,10 @@ class DhikrWidget : AppWidgetProvider() {
                 ACTION_PREVIOUS
             )
 
+            /*
+             * التالي
+             */
+
             bind(
                 views,
                 context,
@@ -350,7 +354,7 @@ class DhikrWidget : AppWidgetProvider() {
             )
 
             /*
-             * أزرار تغيير المجموعة
+             * المجموعة السابقة
              */
 
             bind(
@@ -361,6 +365,10 @@ class DhikrWidget : AppWidgetProvider() {
                 ACTION_GROUP_PREVIOUS
             )
 
+            /*
+             * المجموعة التالية
+             */
+
             bind(
                 views,
                 context,
@@ -370,8 +378,7 @@ class DhikrWidget : AppWidgetProvider() {
             )
 
             /*
-             * الضغط على نص الذكر
-             * يزيد العداد
+             * الضغط على الذكر = زيادة العداد
              */
 
             bind(
@@ -383,8 +390,7 @@ class DhikrWidget : AppWidgetProvider() {
             )
 
             /*
-             * الضغط على عداد الذكر
-             * يزيد العداد
+             * الضغط على العداد = زيادة العداد
              */
 
             bind(
@@ -396,8 +402,7 @@ class DhikrWidget : AppWidgetProvider() {
             )
 
             /*
-             * الضغط على رقم ترتيب الذكر
-             * لا يغير الذكر
+             * ترتيب الذكر = زيادة العداد
              */
 
             bind(
@@ -409,8 +414,16 @@ class DhikrWidget : AppWidgetProvider() {
             )
 
             /*
-             * تحديث الويدجت
+             * زر إعادة العداد = 0
              */
+
+            bind(
+                views,
+                context,
+                widgetId,
+                R.id.dhikr_reset,
+                ACTION_RESET
+            )
 
             AppWidgetManager
                 .getInstance(context)
@@ -487,7 +500,6 @@ class DhikrWidget : AppWidgetProvider() {
                 )
 
             val newCount =
-
                 if (targetCount > 0) {
 
                     (currentCount + 1)
