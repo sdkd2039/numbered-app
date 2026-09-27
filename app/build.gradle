@@ -5,14 +5,14 @@ android {
     namespace 'com.numbered.app'
     compileSdk 34
 
-    defaultConfig {
-        applicationId "com.numbered.app"
-        minSdk 21
-        targetSdk 34
+defaultConfig {
+    applicationId "com.numbered.app"
+    minSdk 21
+    targetSdk 34
 
-        versionCode 107
-        versionName "1.0.7"
-    }
+    versionCode 108
+    versionName "1.0.8"
+}
 
     buildTypes {
         release {
