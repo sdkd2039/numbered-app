@@ -9,7 +9,6 @@ import android.content.Context
 import android.content.Intent
 import android.view.View
 import android.widget.RemoteViews
-import java.util.concurrent.TimeUnit
 
 class RemainingWidget : AppWidgetProvider() {
 
@@ -19,7 +18,10 @@ class RemainingWidget : AppWidgetProvider() {
         ids: IntArray
     ) {
         ids.forEach { widgetId ->
-            updateWidget(context, widgetId)
+            updateWidget(
+                context,
+                widgetId
+            )
         }
 
         scheduleNextUpdate(context)
@@ -29,7 +31,10 @@ class RemainingWidget : AppWidgetProvider() {
         context: Context,
         intent: Intent
     ) {
-        super.onReceive(context, intent)
+        super.onReceive(
+            context,
+            intent
+        )
 
         when (intent.action) {
 
@@ -39,7 +44,9 @@ class RemainingWidget : AppWidgetProvider() {
             ACTION_REFRESH -> {
 
                 val manager =
-                    AppWidgetManager.getInstance(context)
+                    AppWidgetManager.getInstance(
+                        context
+                    )
 
                 val component =
                     ComponentName(
@@ -50,7 +57,11 @@ class RemainingWidget : AppWidgetProvider() {
                 manager
                     .getAppWidgetIds(component)
                     .forEach { widgetId ->
-                        updateWidget(context, widgetId)
+
+                        updateWidget(
+                            context,
+                            widgetId
+                        )
                     }
 
                 scheduleNextUpdate(context)
@@ -63,9 +74,18 @@ class RemainingWidget : AppWidgetProvider() {
         private const val ACTION_REFRESH =
             "com.numbered.app.action.REMAINING_REFRESH"
 
-        // تحديث كل دقيقة
+        // تحديث الودجت كل دقيقة
         private const val UPDATE_INTERVAL =
             60L * 1000L
+
+        private const val MILLIS_PER_MINUTE =
+            1000L * 60L
+
+        private const val MILLIS_PER_HOUR =
+            1000L * 60L * 60L
+
+        private const val MILLIS_PER_DAY =
+            1000L * 60L * 60L * 24L
 
         private fun updateWidget(
             context: Context,
@@ -124,7 +144,6 @@ class RemainingWidget : AppWidgetProvider() {
                     View.VISIBLE
                 )
 
-                // إظهار الدقائق
                 views.setViewVisibility(
                     R.id.remaining_minutes_box,
                     View.VISIBLE
@@ -157,17 +176,23 @@ class RemainingWidget : AppWidgetProvider() {
                     nextEvent.gregorianMillis - now
                 ).coerceAtLeast(0L)
 
+            // نفس طريقة موقع معدودات:
+            // الأيام ثم الساعات ثم الدقائق المكتملة
             val days =
-                TimeUnit.MILLISECONDS
-                    .toDays(remainingMillis)
+                remainingMillis /
+                    MILLIS_PER_DAY
 
             val hours =
-                TimeUnit.MILLISECONDS
-                    .toHours(remainingMillis) % 24L
+                (
+                    remainingMillis %
+                        MILLIS_PER_DAY
+                ) / MILLIS_PER_HOUR
 
             val minutes =
-                TimeUnit.MILLISECONDS
-                    .toMinutes(remainingMillis) % 60L
+                (
+                    remainingMillis %
+                        MILLIS_PER_HOUR
+                ) / MILLIS_PER_MINUTE
 
             views.setTextViewText(
                 R.id.remaining_event_name,
@@ -204,7 +229,6 @@ class RemainingWidget : AppWidgetProvider() {
                 View.VISIBLE
             )
 
-            // إظهار الدقائق
             views.setViewVisibility(
                 R.id.remaining_minutes_box,
                 View.VISIBLE
@@ -230,7 +254,7 @@ class RemainingWidget : AppWidgetProvider() {
                 false
             )
 
-            // الضغط على الودجت يفتح التطبيق كالسابق
+            // الضغط على الودجت يفتح التطبيق كما كان
             setOpenAppAction(
                 context,
                 widgetId,
@@ -330,7 +354,8 @@ class RemainingWidget : AppWidgetProvider() {
                     context,
                     RemainingWidget::class.java
                 ).apply {
-                    action = ACTION_REFRESH
+                    action =
+                        ACTION_REFRESH
                 }
 
             val pendingIntent =
