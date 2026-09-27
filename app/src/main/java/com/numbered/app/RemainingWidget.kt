@@ -19,10 +19,7 @@ class RemainingWidget : AppWidgetProvider() {
         ids: IntArray
     ) {
         ids.forEach { widgetId ->
-            updateWidget(
-                context,
-                widgetId
-            )
+            updateWidget(context, widgetId)
         }
 
         scheduleNextUpdate(context)
@@ -32,10 +29,7 @@ class RemainingWidget : AppWidgetProvider() {
         context: Context,
         intent: Intent
     ) {
-        super.onReceive(
-            context,
-            intent
-        )
+        super.onReceive(context, intent)
 
         when (intent.action) {
 
@@ -45,9 +39,7 @@ class RemainingWidget : AppWidgetProvider() {
             ACTION_REFRESH -> {
 
                 val manager =
-                    AppWidgetManager.getInstance(
-                        context
-                    )
+                    AppWidgetManager.getInstance(context)
 
                 val component =
                     ComponentName(
@@ -58,11 +50,7 @@ class RemainingWidget : AppWidgetProvider() {
                 manager
                     .getAppWidgetIds(component)
                     .forEach { widgetId ->
-
-                        updateWidget(
-                            context,
-                            widgetId
-                        )
+                        updateWidget(context, widgetId)
                     }
 
                 scheduleNextUpdate(context)
@@ -75,14 +63,9 @@ class RemainingWidget : AppWidgetProvider() {
         private const val ACTION_REFRESH =
             "com.numbered.app.action.REMAINING_REFRESH"
 
-        private const val NORMAL_UPDATE_INTERVAL =
-            30L * 60L * 1000L
-
-        private const val FAST_UPDATE_INTERVAL =
+        // تحديث كل دقيقة
+        private const val UPDATE_INTERVAL =
             60L * 1000L
-
-        private const val ONE_DAY =
-            24L * 60L * 60L * 1000L
 
         private fun updateWidget(
             context: Context,
@@ -141,10 +124,10 @@ class RemainingWidget : AppWidgetProvider() {
                     View.VISIBLE
                 )
 
-                // إخفاء الدقائق
+                // إظهار الدقائق
                 views.setViewVisibility(
                     R.id.remaining_minutes_box,
-                    View.GONE
+                    View.VISIBLE
                 )
 
                 views.setProgressBar(
@@ -176,21 +159,15 @@ class RemainingWidget : AppWidgetProvider() {
 
             val days =
                 TimeUnit.MILLISECONDS
-                    .toDays(
-                        remainingMillis
-                    )
+                    .toDays(remainingMillis)
 
             val hours =
                 TimeUnit.MILLISECONDS
-                    .toHours(
-                        remainingMillis
-                    ) % 24L
+                    .toHours(remainingMillis) % 24L
 
             val minutes =
                 TimeUnit.MILLISECONDS
-                    .toMinutes(
-                        remainingMillis
-                    ) % 60L
+                    .toMinutes(remainingMillis) % 60L
 
             views.setTextViewText(
                 R.id.remaining_event_name,
@@ -227,10 +204,10 @@ class RemainingWidget : AppWidgetProvider() {
                 View.VISIBLE
             )
 
-            // إخفاء الدقائق
+            // إظهار الدقائق
             views.setViewVisibility(
                 R.id.remaining_minutes_box,
-                View.GONE
+                View.VISIBLE
             )
 
             val previousEvent =
@@ -253,6 +230,7 @@ class RemainingWidget : AppWidgetProvider() {
                 false
             )
 
+            // الضغط على الودجت يفتح التطبيق كالسابق
             setOpenAppAction(
                 context,
                 widgetId,
@@ -347,39 +325,12 @@ class RemainingWidget : AppWidgetProvider() {
             context: Context
         ) {
 
-            val now =
-                System.currentTimeMillis()
-
-            val nextEvent =
-                RemainingRepository.nextUpcoming(
-                    context,
-                    now
-                )
-
-            val remaining =
-                nextEvent?.let {
-                    (
-                        it.gregorianMillis - now
-                    ).coerceAtLeast(0L)
-                }
-
-            val interval =
-                if (
-                    remaining != null &&
-                    remaining <= ONE_DAY
-                ) {
-                    FAST_UPDATE_INTERVAL
-                } else {
-                    NORMAL_UPDATE_INTERVAL
-                }
-
             val intent =
                 Intent(
                     context,
                     RemainingWidget::class.java
                 ).apply {
-                    action =
-                        ACTION_REFRESH
+                    action = ACTION_REFRESH
                 }
 
             val pendingIntent =
@@ -398,7 +349,7 @@ class RemainingWidget : AppWidgetProvider() {
 
             val triggerAt =
                 System.currentTimeMillis() +
-                    interval
+                    UPDATE_INTERVAL
 
             alarmManager.setAndAllowWhileIdle(
                 AlarmManager.RTC,
