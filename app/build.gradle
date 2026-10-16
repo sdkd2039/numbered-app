@@ -14,10 +14,28 @@ defaultConfig {
     versionName "1.0.8"
 }
 
+    // Release signing is read from environment variables that Codemagic injects
+    // from the keystore configured under Teams > Code signing identities.
+    // Nothing secret is stored in this repository.
+    signingConfigs {
+        release {
+            def keystorePath = System.getenv("CM_KEYSTORE_PATH")
+            if (keystorePath) {
+                storeFile file(keystorePath)
+                storePassword System.getenv("CM_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("CM_KEY_ALIAS")
+                keyPassword System.getenv("CM_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (System.getenv("CM_KEYSTORE_PATH")) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 
@@ -34,4 +52,10 @@ defaultConfig {
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.9.0'
+
+    // OneSignal push notifications (Stable channel per onesignal.github.io/sdk-releases/releases.json)
+    implementation 'com.onesignal:OneSignal:5.9.2'
+    // OneSignal declares coroutines as runtime-only; requestPermission() is a suspend
+    // function, so the app needs them on its compile classpath. Same version OneSignal 5.9.2 uses.
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
 }

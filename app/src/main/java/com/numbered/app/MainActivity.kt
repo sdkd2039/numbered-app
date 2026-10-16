@@ -19,6 +19,10 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.onesignal.OneSignal
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
 import java.net.URISyntaxException
@@ -88,6 +92,26 @@ class MainActivity : AppCompatActivity() {
 
         if (savedInstanceState != null) webView.restoreState(savedInstanceState)
         else webView.loadUrl(homeUrl)
+
+        requestNotificationPermissionIfNeeded()
+    }
+
+    /**
+     * Android 13+ (API 33) requires the POST_NOTIFICATIONS runtime permission.
+     * OneSignal shows the system dialog. fallbackToSettings = false means a user
+     * who denied is never pushed to system settings; they can still enable
+     * notifications later from Settings, and the rest of the app is unaffected.
+     */
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        try {
+            if (OneSignal.Notifications.permission) return
+            CoroutineScope(Dispatchers.Main).launch {
+                try {
+                    OneSignal.Notifications.requestPermission(false)
+                } catch (_: Exception) { }
+            }
+        } catch (_: Exception) { }
     }
 
     private fun showOfflinePage() {
