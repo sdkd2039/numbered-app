@@ -60,7 +60,7 @@ workflows:
     environment:
       java: 17
       android_signing:
-        - numbered_release_keystore
+      - numbered_release_keystore
 
     scripts:
       - name: Check release signing is available
