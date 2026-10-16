@@ -1,155 +1,131 @@
 workflows:
-  android-workflow:
-    name: Build Numbered App
-    max_build_duration: 30
-    instance_type: mac_mini_m1
+android-workflow:
+name: Build Numbered App
+max_build_duration: 30
+instance_type: mac_mini_m1
 
-    environment:
-      java: 17
+environment:
+  java: 17
 
-    scripts:
-      - name: Build Android APK
-        script: |
-          echo "=== Enabling AndroidX ==="
+scripts:
+  - name: Build Android APK
+    script: |
+      echo "=== Enabling AndroidX ==="
 
-          if ! grep -q "^android.useAndroidX=" gradle.properties; then
-            echo "android.useAndroidX=true" >> gradle.properties
-          fi
+      if ! grep -q "^android.useAndroidX=" gradle.properties; then
+        echo "android.useAndroidX=true" >> gradle.properties
+      fi
 
-          if ! grep -q "^android.enableJetifier=" gradle.properties; then
-            echo "android.enableJetifier=true" >> gradle.properties
-          fi
+      if ! grep -q "^android.enableJetifier=" gradle.properties; then
+        echo "android.enableJetifier=true" >> gradle.properties
+      fi
 
-          echo "=== Creating launcher icon folders ==="
+      echo "=== Creating launcher icon folders ==="
 
-          mkdir -p app/src/main/res/mipmap-mdpi
-          mkdir -p app/src/main/res/mipmap-hdpi
-          mkdir -p app/src/main/res/mipmap-xhdpi
-          mkdir -p app/src/main/res/mipmap-xxhdpi
-          mkdir -p app/src/main/res/mipmap-xxxhdpi
+      mkdir -p app/src/main/res/mipmap-mdpi
+      mkdir -p app/src/main/res/mipmap-hdpi
+      mkdir -p app/src/main/res/mipmap-xhdpi
+      mkdir -p app/src/main/res/mipmap-xxhdpi
+      mkdir -p app/src/main/res/mipmap-xxxhdpi
 
-          echo "=== Downloading app icon ==="
+      echo "=== Downloading app icon ==="
 
-          curl -L "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" \
-            -o app/src/main/res/mipmap-mdpi/ic_launcher.png
+      curl -fL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o app/src/main/res/mipmap-mdpi/ic_launcher.png
+      curl -fL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o app/src/main/res/mipmap-hdpi/ic_launcher.png
+      curl -fL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o app/src/main/res/mipmap-xhdpi/ic_launcher.png
+      curl -fL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+      curl -fL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
 
-          curl -L "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" \
-            -o app/src/main/res/mipmap-hdpi/ic_launcher.png
+      echo "=== Building DEBUG APK ==="
 
-          curl -L "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" \
-            -o app/src/main/res/mipmap-xhdpi/ic_launcher.png
+      chmod +x gradlew
+      ./gradlew --version
+      ./gradlew clean :app:assembleDebug
 
-          curl -L "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" \
-            -o app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+artifacts:
+  - app/build/outputs/apk/debug/*.apk
 
-          curl -L "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" \
-            -o app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+publishing:
+  email:
+    recipients:
+      - sultan2021alamoudi@gmail.com
+    notify:
+      failure: true
+      success: false
 
-          echo "=== Building DEBUG APK ==="
+Signed RELEASE APK.
 
-          chmod +x gradlew
-          ./gradlew --version
-          ./gradlew clean :app:assembleDebug
+The keystore must be available to this account in Codemagic.
 
-    artifacts:
-      - app/build/outputs/apk/debug/*.apk
+android-release-workflow:
+name: Build Numbered App (Release)
+max_build_duration: 30
+instance_type: mac_mini_m1
 
-    publishing:
-      email:
-        recipients:
-          - sultan2021alamoudi@gmail.com
-        notify:
-          failure: true
-          success: false
+environment:
+  java: 17
+  android_signing:
+    - numbered_release_keystore
 
-  # ---------------------------------------------------------------------------
-  # Signed RELEASE APK.
-  # Requires an Android keystore uploaded in Codemagic:
-  #   Teams > Code signing identities > Android keystores
-  # with the reference name below. Passwords/keys are injected by Codemagic as
-  # CM_KEYSTORE_PATH, CM_KEYSTORE_PASSWORD, CM_KEY_ALIAS, CM_KEY_PASSWORD and are
-  # never stored in this repository. If the keystore is missing, this workflow
-  # fails on purpose instead of producing an uninstallable unsigned APK.
-  # ---------------------------------------------------------------------------
-      android-release-workflow:
-    name: Build Numbered App (Release)
-    max_build_duration: 30
-    instance_type: mac_mini_m1
+scripts:
+  - name: Check release signing is available
+    script: |
+      if [ -z "$CM_KEYSTORE_PATH" ]; then
+        echo "ERROR: No Android keystore was provided by Codemagic."
+        echo "Check the Android keystore reference in Codemagic."
+        exit 1
+      fi
+      echo "Keystore provided by Codemagic (path and passwords not printed)."
 
-    environment:
-      java: 17
-      android_signing:
-        - numbered_release_keystore
+  - name: Build Android Release APK
+    script: |
+      echo "=== Enabling AndroidX ==="
 
-    scripts:
-      - name: Check release signing is available
-        script: |
-          if [ -z "$CM_KEYSTORE_PATH" ]; then
-            echo "ERROR: No Android keystore was provided by Codemagic."
-            echo "Upload a keystore under Teams > Code signing identities > Android keystores"
-            echo "and make sure its reference name matches android_signing in codemagic.yaml."
-            exit 1
-          fi
-          echo "Keystore provided by Codemagic (path and passwords not printed)."
+      if ! grep -q "^android.useAndroidX=" gradle.properties; then
+        echo "android.useAndroidX=true" >> gradle.properties
+      fi
 
-      - name: Build Android Release APK
-        script: |
-          echo "=== Enabling AndroidX ==="
+      if ! grep -q "^android.enableJetifier=" gradle.properties; then
+        echo "android.enableJetifier=true" >> gradle.properties
+      fi
 
-          if ! grep -q "^android.useAndroidX=" gradle.properties; then
-            echo "android.useAndroidX=true" >> gradle.properties
-          fi
+      echo "=== Creating launcher icon folders ==="
 
-          if ! grep -q "^android.enableJetifier=" gradle.properties; then
-            echo "android.enableJetifier=true" >> gradle.properties
-          fi
+      mkdir -p app/src/main/res/mipmap-mdpi
+      mkdir -p app/src/main/res/mipmap-hdpi
+      mkdir -p app/src/main/res/mipmap-xhdpi
+      mkdir -p app/src/main/res/mipmap-xxhdpi
+      mkdir -p app/src/main/res/mipmap-xxxhdpi
 
-          echo "=== Creating launcher icon folders ==="
+      echo "=== Downloading app icon ==="
 
-          mkdir -p app/src/main/res/mipmap-mdpi
-          mkdir -p app/src/main/res/mipmap-hdpi
-          mkdir -p app/src/main/res/mipmap-xhdpi
-          mkdir -p app/src/main/res/mipmap-xxhdpi
-          mkdir -p app/src/main/res/mipmap-xxxhdpi
+      curl -fL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o app/src/main/res/mipmap-mdpi/ic_launcher.png
+      curl -fL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o app/src/main/res/mipmap-hdpi/ic_launcher.png
+      curl -fL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o app/src/main/res/mipmap-xhdpi/ic_launcher.png
+      curl -fL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+      curl -fL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
 
-          echo "=== Downloading app icon ==="
+      echo "=== Building RELEASE APK ==="
 
-          curl -L "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" \
-            -o app/src/main/res/mipmap-mdpi/ic_launcher.png
+      chmod +x gradlew
+      ./gradlew --version
+      ./gradlew clean :app:assembleRelease
 
-          curl -L "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" \
-            -o app/src/main/res/mipmap-hdpi/ic_launcher.png
+  - name: Verify the release APK is signed
+    script: |
+      ls -l app/build/outputs/apk/release/
+      if ls app/build/outputs/apk/release/*unsigned*.apk >/dev/null 2>&1; then
+        echo "ERROR: Gradle produced an unsigned APK. Check the keystore reference."
+        exit 1
+      fi
 
-          curl -L "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" \
-            -o app/src/main/res/mipmap-xhdpi/ic_launcher.png
+artifacts:
+  - app/build/outputs/apk/release/*.apk
 
-          curl -L "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" \
-            -o app/src/main/res/mipmap-xxhdpi/ic_launcher.png
-
-          curl -L "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" \
-            -o app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
-
-          echo "=== Building RELEASE APK ==="
-
-          chmod +x gradlew
-          ./gradlew --version
-          ./gradlew clean :app:assembleRelease
-
-      - name: Verify the release APK is signed
-        script: |
-          ls -l app/build/outputs/apk/release/
-          if ls app/build/outputs/apk/release/*unsigned*.apk >/dev/null 2>&1; then
-            echo "ERROR: Gradle produced an unsigned APK. Check the keystore reference."
-            exit 1
-          fi
-
-    artifacts:
-      - app/build/outputs/apk/release/*.apk
-
-    publishing:
-      email:
-        recipients:
-          - sultan2021alamoudi@gmail.com
-        notify:
-          failure: true
-          success: true
+publishing:
+  email:
+    recipients:
+      - sultan2021alamoudi@gmail.com
+    notify:
+      failure: true
+      success: true
