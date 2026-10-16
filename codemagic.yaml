@@ -1,131 +1,122 @@
+
 workflows:
-android-workflow:
-name: Build Numbered App
-max_build_duration: 30
-instance_type: mac_mini_m1
+  android-workflow:
+    name: Build Numbered App
+    max_build_duration: 30
+    instance_type: mac_mini_m1
 
-environment:
-  java: 17
+    environment:
+      java: 17
 
-scripts:
-  - name: Build Android APK
-    script: |
-      echo "=== Enabling AndroidX ==="
+    scripts:
+      - name: Build Android APK
+        script: |
+          echo "=== Enabling AndroidX ==="
 
-      if ! grep -q "^android.useAndroidX=" gradle.properties; then
-        echo "android.useAndroidX=true" >> gradle.properties
-      fi
+          if ! grep -q "^android.useAndroidX=" gradle.properties; then
+            echo "android.useAndroidX=true" >> gradle.properties
+          fi
 
-      if ! grep -q "^android.enableJetifier=" gradle.properties; then
-        echo "android.enableJetifier=true" >> gradle.properties
-      fi
+          if ! grep -q "^android.enableJetifier=" gradle.properties; then
+            echo "android.enableJetifier=true" >> gradle.properties
+          fi
 
-      echo "=== Creating launcher icon folders ==="
+          echo "=== Creating launcher icon folders ==="
+          mkdir -p app/src/main/res/mipmap-mdpi
+          mkdir -p app/src/main/res/mipmap-hdpi
+          mkdir -p app/src/main/res/mipmap-xhdpi
+          mkdir -p app/src/main/res/mipmap-xxhdpi
+          mkdir -p app/src/main/res/mipmap-xxxhdpi
 
-      mkdir -p app/src/main/res/mipmap-mdpi
-      mkdir -p app/src/main/res/mipmap-hdpi
-      mkdir -p app/src/main/res/mipmap-xhdpi
-      mkdir -p app/src/main/res/mipmap-xxhdpi
-      mkdir -p app/src/main/res/mipmap-xxxhdpi
+          echo "=== Downloading app icon ==="
+          ICON_URL="https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png"
+          for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            curl -fL "$ICON_URL" -o "app/src/main/res/mipmap-${density}/ic_launcher.png" || exit 1
+          done
 
-      echo "=== Downloading app icon ==="
+          echo "=== Building DEBUG APK ==="
+          chmod +x gradlew
+          ./gradlew --version
+          ./gradlew clean :app:assembleDebug
 
-      curl -fL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o app/src/main/res/mipmap-mdpi/ic_launcher.png
-      curl -fL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o app/src/main/res/mipmap-hdpi/ic_launcher.png
-      curl -fL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o app/src/main/res/mipmap-xhdpi/ic_launcher.png
-      curl -fL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o app/src/main/res/mipmap-xxhdpi/ic_launcher.png
-      curl -fL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+    artifacts:
+      - app/build/outputs/apk/debug/*.apk
 
-      echo "=== Building DEBUG APK ==="
+    publishing:
+      email:
+        recipients:
+          - sultan2021alamoudi@gmail.com
+        notify:
+          failure: true
+          success: false
 
-      chmod +x gradlew
-      ./gradlew --version
-      ./gradlew clean :app:assembleDebug
+  # Signed RELEASE APK.
+  # The keystore reference must exist in Codemagic.
+  android-release-workflow:
+    name: Build Numbered App (Release)
+    max_build_duration: 30
+    instance_type: mac_mini_m1
 
-artifacts:
-  - app/build/outputs/apk/debug/*.apk
+    environment:
+      java: 17
+      android_signing:
+        - numbered_release_keystore
 
-publishing:
-  email:
-    recipients:
-      - sultan2021alamoudi@gmail.com
-    notify:
-      failure: true
-      success: false
+    scripts:
+      - name: Check release signing is available
+        script: |
+          if [ -z "$CM_KEYSTORE_PATH" ]; then
+            echo "ERROR: No Android keystore was provided by Codemagic."
+            echo "Check the Android keystore reference in Codemagic."
+            exit 1
+          fi
+          echo "Keystore provided by Codemagic (path and passwords not printed)."
 
-Signed RELEASE APK.
+      - name: Build Android Release APK
+        script: |
+          echo "=== Enabling AndroidX ==="
 
-Requires the Android keystore reference configured below.
+          if ! grep -q "^android.useAndroidX=" gradle.properties; then
+            echo "android.useAndroidX=true" >> gradle.properties
+          fi
 
-android-release-workflow:
-name: Build Numbered App (Release)
-max_build_duration: 30
-instance_type: mac_mini_m1
+          if ! grep -q "^android.enableJetifier=" gradle.properties; then
+            echo "android.enableJetifier=true" >> gradle.properties
+          fi
 
-environment:
-  java: 17
-  android_signing:
-    - numbered_release_keystore
+          echo "=== Creating launcher icon folders ==="
+          mkdir -p app/src/main/res/mipmap-mdpi
+          mkdir -p app/src/main/res/mipmap-hdpi
+          mkdir -p app/src/main/res/mipmap-xhdpi
+          mkdir -p app/src/main/res/mipmap-xxhdpi
+          mkdir -p app/src/main/res/mipmap-xxxhdpi
 
-scripts:
-  - name: Check release signing is available
-    script: |
-      if [ -z "$CM_KEYSTORE_PATH" ]; then
-        echo "ERROR: No Android keystore was provided by Codemagic."
-        echo "Check the Android keystore reference in Codemagic."
-        exit 1
-      fi
-      echo "Keystore provided by Codemagic (path and passwords not printed)."
+          echo "=== Downloading app icon ==="
+          ICON_URL="https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png"
+          for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            curl -fL "$ICON_URL" -o "app/src/main/res/mipmap-${density}/ic_launcher.png" || exit 1
+          done
 
-  - name: Build Android Release APK
-    script: |
-      echo "=== Enabling AndroidX ==="
+          echo "=== Building RELEASE APK ==="
+          chmod +x gradlew
+          ./gradlew --version
+          ./gradlew clean :app:assembleRelease
 
-      if ! grep -q "^android.useAndroidX=" gradle.properties; then
-        echo "android.useAndroidX=true" >> gradle.properties
-      fi
+      - name: Verify the release APK is signed
+        script: |
+          ls -l app/build/outputs/apk/release/
+          if ls app/build/outputs/apk/release/*unsigned*.apk >/dev/null 2>&1; then
+            echo "ERROR: Gradle produced an unsigned APK. Check the keystore reference."
+            exit 1
+          fi
 
-      if ! grep -q "^android.enableJetifier=" gradle.properties; then
-        echo "android.enableJetifier=true" >> gradle.properties
-      fi
+    artifacts:
+      - app/build/outputs/apk/release/*.apk
 
-      echo "=== Creating launcher icon folders ==="
-
-      mkdir -p app/src/main/res/mipmap-mdpi
-      mkdir -p app/src/main/res/mipmap-hdpi
-      mkdir -p app/src/main/res/mipmap-xhdpi
-      mkdir -p app/src/main/res/mipmap-xxhdpi
-      mkdir -p app/src/main/res/mipmap-xxxhdpi
-
-      echo "=== Downloading app icon ==="
-
-      curl -fL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o app/src/main/res/mipmap-mdpi/ic_launcher.png
-      curl -fL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o app/src/main/res/mipmap-hdpi/ic_launcher.png
-      curl -fL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o app/src/main/res/mipmap-xhdpi/ic_launcher.png
-      curl -fL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o app/src/main/res/mipmap-xxhdpi/ic_launcher.png
-      curl -fL "https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png" -o app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
-
-      echo "=== Building RELEASE APK ==="
-
-      chmod +x gradlew
-      ./gradlew --version
-      ./gradlew clean :app:assembleRelease
-
-  - name: Verify the release APK is signed
-    script: |
-      ls -l app/build/outputs/apk/release/
-      if ls app/build/outputs/apk/release/*unsigned*.apk >/dev/null 2>&1; then
-        echo "ERROR: Gradle produced an unsigned APK. Check the keystore reference."
-        exit 1
-      fi
-
-artifacts:
-  - app/build/outputs/apk/release/*.apk
-
-publishing:
-  email:
-    recipients:
-      - sultan2021alamoudi@gmail.com
-    notify:
-      failure: true
-      success: true
+    publishing:
+      email:
+        recipients:
+          - sultan2021alamoudi@gmail.com
+        notify:
+          failure: true
+          success: true
