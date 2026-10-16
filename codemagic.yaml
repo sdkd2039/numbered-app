@@ -47,8 +47,8 @@ workflows:
 
           echo "=== Building DEBUG APK ==="
 
-          gradle wrapper
           chmod +x gradlew
+          ./gradlew --version
           ./gradlew clean :app:assembleDebug
 
     artifacts:
