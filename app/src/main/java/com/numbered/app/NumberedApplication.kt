@@ -1,4 +1,3 @@
-
 package com.numbered.app
 
 import android.app.Application
