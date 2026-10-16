@@ -55,7 +55,7 @@ publishing:
 
 Signed RELEASE APK.
 
-The keystore must be available to this account in Codemagic.
+Requires the Android keystore reference configured below.
 
 android-release-workflow:
 name: Build Numbered App (Release)
