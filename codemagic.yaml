@@ -146,7 +146,7 @@ workflows:
           echo "=== Building Numbered TV 1.0.3 ==="
           chmod +x gradlew
           ./gradlew --version
-          ./gradlew :tv:assembleDebug
+          ./gradlew :tv:assembleDebug --stacktrace --info
 
     artifacts:
       - tv/build/outputs/apk/debug/*.apk
