@@ -60,7 +60,7 @@ workflows:
     environment:
       java: 17
       android_signing:
-      - numbered_release_keystore
+        - numbered_release_keystore
 
     scripts:
       - name: Check release signing is available
@@ -120,3 +120,41 @@ workflows:
         notify:
           failure: true
           success: true
+
+  # Independent Android TV APK.
+  android-tv-workflow:
+    name: Build Numbered TV 1.0.3
+    max_build_duration: 30
+    instance_type: mac_mini_m1
+
+    environment:
+      java: 17
+
+    scripts:
+      - name: Build Android TV APK
+        script: |
+          echo "=== Enabling AndroidX ==="
+
+          if ! grep -q "^android.useAndroidX=" gradle.properties; then
+            echo "android.useAndroidX=true" >> gradle.properties
+          fi
+
+          if ! grep -q "^android.enableJetifier=" gradle.properties; then
+            echo "android.enableJetifier=true" >> gradle.properties
+          fi
+
+          echo "=== Building Numbered TV 1.0.3 ==="
+          chmod +x gradlew
+          ./gradlew --version
+          ./gradlew :tv:assembleDebug
+
+    artifacts:
+      - tv/build/outputs/apk/debug/*.apk
+
+    publishing:
+      email:
+        recipients:
+          - sultan2021alamoudi@gmail.com
+        notify:
+          failure: true
+          success: false
