@@ -17,7 +17,8 @@
 
     <application
         android:allowBackup="false"
-        android:label="معدودات TV"
+        android:icon="@mipmap/ic_launcher"
+        android:label="معدودات"
         android:banner="@drawable/tv_banner"
         android:usesCleartextTraffic="false"
         android:supportsRtl="true"
