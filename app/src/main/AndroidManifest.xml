@@ -41,7 +41,7 @@
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
 
                 <!-- تحديث الويدجت الخاص بنا -->
-                <action android:name="com.numbered.app.action.REMAINING_REFRESH" />
+                <action android:name="com.sutstude.numberedapp.action.REMAINING_REFRESH" />
             </intent-filter>
 
             <meta-data
