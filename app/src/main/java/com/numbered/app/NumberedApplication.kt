@@ -1,4 +1,4 @@
-package com.numbered.app
+package com.sutstude.numberedapp
 
 import android.app.Application
 import android.content.pm.ApplicationInfo
