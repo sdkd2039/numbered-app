@@ -1,4 +1,4 @@
-package com.numbered.app
+package com.sutstude.numberedapp
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
@@ -12,19 +12,19 @@ class DhikrWidget : AppWidgetProvider() {
     companion object {
 
         private const val ACTION_NEXT =
-            "com.numbered.app.DHIKR_NEXT"
+            "com.sutstude.numberedapp.DHIKR_NEXT"
 
         private const val ACTION_PREVIOUS =
-            "com.numbered.app.DHIKR_PREVIOUS"
+            "com.sutstude.numberedapp.DHIKR_PREVIOUS"
 
         private const val ACTION_RESET =
-            "com.numbered.app.DHIKR_RESET"
+            "com.sutstude.numberedapp.DHIKR_RESET"
 
         private const val ACTION_INCREMENT =
-            "com.numbered.app.DHIKR_INCREMENT"
+            "com.sutstude.numberedapp.DHIKR_INCREMENT"
 
         private const val ACTION_CATEGORY =
-            "com.numbered.app.DHIKR_CATEGORY"
+            "com.sutstude.numberedapp.DHIKR_CATEGORY"
 
         private const val PREFS =
             "dhikr_widget_state"
