@@ -1,4 +1,4 @@
-package com.numbered.app
+package com.sutstude.numberedapp
 
 import android.app.AlarmManager
 import android.app.PendingIntent
@@ -72,7 +72,7 @@ class RemainingWidget : AppWidgetProvider() {
     companion object {
 
         private const val ACTION_REFRESH =
-            "com.numbered.app.action.REMAINING_REFRESH"
+            "com.sutstude.numberedapp.action.REMAINING_REFRESH"
 
         // تحديث الودجت كل دقيقة
         private const val UPDATE_INTERVAL =
