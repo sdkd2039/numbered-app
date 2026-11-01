@@ -337,7 +337,7 @@ object HomeChannels {
                 val old = existing[card.internalId]
                 if (old == null) {
                     helper.publishPreviewProgram(buildProgram(context, channelId, card))
-                } else if (isChanged(old, card)) {
+                } else if (isChanged(context, old, card)) {
                     helper.updatePreviewProgram(old.id, buildProgram(context, channelId, card))
                 }
             } catch (e: Exception) {
@@ -346,9 +346,10 @@ object HomeChannels {
         }
     }
 
-    private fun isChanged(old: PreviewProgram, card: Card): Boolean =
+    private fun isChanged(context: Context, old: PreviewProgram, card: Card): Boolean =
         old.title != card.title ||
             old.description != card.description ||
             old.intentUri != card.intentUri ||
+            old.posterArtUri != posterUri(context, card.posterResId) ||
             old.weight != card.weight
 }

@@ -97,7 +97,7 @@ class MainActivity : Activity() {
                   var name = id.substring(id.indexOf(':') + 1);
                   var items = Array.from(document.querySelectorAll('#panel-remaining .countdown-item'));
                   var target = items.find(function(item) {
-                    return item.querySelector('.countdown-title')?.textContent.trim() === name;
+                    return item.querySelector('.countdown-title')?.textContent.trim().startsWith(name);
                   });
                   if (target) {
                     target.scrollIntoView({behavior: 'smooth', block: 'center'});
