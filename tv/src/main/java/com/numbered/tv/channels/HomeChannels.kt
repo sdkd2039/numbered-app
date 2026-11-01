@@ -274,6 +274,15 @@ object HomeChannels {
         }
     }
 
+    /** يختار صورة المناسبة من اسمها في ملف CSV. */
+    private fun remainingPoster(name: String): Int = when {
+        name.contains("رمضان") -> R.drawable.remaining_ramadan
+        name.contains("الفطر") -> R.drawable.remaining_eid_fitr
+        name.contains("الأضحى") || name.contains("الاضحى") -> R.drawable.remaining_eid_adha
+        name.contains("الحجة") || name.contains("الحجه") -> R.drawable.remaining_hajj
+        else -> R.drawable.tv_banner
+    }
+
     /** الضغط على البطاقة يفتح MainActivity (الـ WebView كما هو) مع تمرير نوع المحتوى ومعرّفه في الـ Intent. */
     private fun programIntentUri(context: Context, type: String, id: String): Uri {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("numberedtv://$type/${Uri.encode(id)}"))
