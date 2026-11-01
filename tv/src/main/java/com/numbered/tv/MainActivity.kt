@@ -1,5 +1,5 @@
 
-package com.numbered.tv
+package com.sutstudio.numberedtv
 
 import android.app.Activity
 import android.os.Bundle
