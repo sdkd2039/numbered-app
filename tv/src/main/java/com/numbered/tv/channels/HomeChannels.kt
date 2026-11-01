@@ -262,14 +262,17 @@ object HomeChannels {
 
         return visible.mapIndexed { index, (entry, countdown) ->
             val id = "${entry.startMillis}:${entry.name}"
+            val poster = remainingPoster(entry)
             Card(
-                internalId = "remaining:$id",
+                // تضمين معرّف الصورة يجبر Android TV على حذف البطاقة القديمة
+                // وإعادة نشرها عند تغيير الملصق بدل الاحتفاظ بصورة مخزنة مؤقتًا.
+                internalId = "remaining:$id:poster:$poster",
                 title = ChannelData.upcomingTitle(entry),
                 description = ChannelData.upcomingDescription(entry, countdown),
                 type = TvContractCompat.PreviewProgramColumns.TYPE_EVENT,
                 weight = visible.size - index,
                 intentUri = programIntentUri(context, CONTENT_TYPE_REMAINING, id),
-                posterResId = remainingPoster(entry)
+                posterResId = poster
             )
         }
     }
