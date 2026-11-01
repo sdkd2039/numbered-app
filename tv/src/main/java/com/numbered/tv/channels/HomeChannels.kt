@@ -269,14 +269,17 @@ object HomeChannels {
                 type = TvContractCompat.PreviewProgramColumns.TYPE_EVENT,
                 weight = visible.size - index,
                 intentUri = programIntentUri(context, CONTENT_TYPE_REMAINING, id),
-                posterResId = remainingPoster(entry.name)
+                posterResId = remainingPoster(entry)
             )
         }
     }
 
-    /** يختار صورة المناسبة من اسمها في CSV بعد توحيد أشكال الحروف العربية. */
-    private fun remainingPoster(name: String): Int {
-        val normalized = name
+    /**
+     * يختار الصورة من التاريخ الهجري نفسه، لا من اسم المناسبة.
+     * هذا يمنع اختلاف كتابة «عيد الأضحى» من التأثير على الصورة.
+     */
+    private fun remainingPoster(entry: UpcomingEntry): Int {
+        val date = ChannelData.normalizeDigits(entry.hijriDate)
             .replace(Regex("[\\u064B-\\u065F\\u0670]"), "")
             .replace('أ', 'ا')
             .replace('إ', 'ا')
@@ -287,10 +290,14 @@ object HomeChannels {
             .trim()
 
         return when {
-            normalized.contains("رمضان") -> R.drawable.remaining_ramadan
-            normalized.contains("فطر") -> R.drawable.remaining_eid_fitr
-            normalized.contains("اضحي") || normalized.contains("اضحى") -> R.drawable.remaining_eid_adha
-            normalized.contains("حجه") -> R.drawable.remaining_hajj
+            date.startsWith("10 ذو الحجه") || date.startsWith("١٠ ذو الحجه") ->
+                R.drawable.remaining_eid_adha
+            date.startsWith("1 شوال") ->
+                R.drawable.remaining_eid_fitr
+            date.startsWith("1 ذو الحجه") ->
+                R.drawable.remaining_hajj
+            date.startsWith("1 رمضان") ->
+                R.drawable.remaining_ramadan
             else -> R.drawable.tv_banner
         }
     }
