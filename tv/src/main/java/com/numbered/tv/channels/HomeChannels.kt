@@ -274,13 +274,25 @@ object HomeChannels {
         }
     }
 
-    /** يختار صورة المناسبة من اسمها في ملف CSV. */
-    private fun remainingPoster(name: String): Int = when {
-        name.contains("رمضان") -> R.drawable.remaining_ramadan
-        name.contains("الفطر") -> R.drawable.remaining_eid_fitr
-        name.contains("الأضحى") || name.contains("الاضحى") -> R.drawable.remaining_eid_adha
-        name.contains("الحجة") || name.contains("الحجه") -> R.drawable.remaining_hajj
-        else -> R.drawable.tv_banner
+    /** يختار صورة المناسبة من اسمها في CSV بعد توحيد أشكال الحروف العربية. */
+    private fun remainingPoster(name: String): Int {
+        val normalized = name
+            .replace(Regex("[\\u064B-\\u065F\\u0670]"), "")
+            .replace('أ', 'ا')
+            .replace('إ', 'ا')
+            .replace('آ', 'ا')
+            .replace('ى', 'ي')
+            .replace('ة', 'ه')
+            .replace(Regex("\\s+"), " ")
+            .trim()
+
+        return when {
+            normalized.contains("رمضان") -> R.drawable.remaining_ramadan
+            normalized.contains("فطر") -> R.drawable.remaining_eid_fitr
+            normalized.contains("اضحي") || normalized.contains("اضحى") -> R.drawable.remaining_eid_adha
+            normalized.contains("حجه") -> R.drawable.remaining_hajj
+            else -> R.drawable.tv_banner
+        }
     }
 
     /** الضغط على البطاقة يفتح MainActivity (الـ WebView كما هو) مع تمرير نوع المحتوى ومعرّفه في الـ Intent. */
