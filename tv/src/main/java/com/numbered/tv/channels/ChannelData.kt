@@ -200,6 +200,10 @@ object ChannelData {
     fun dhikrDescription(entry: DhikrEntry): String =
         "${preview(entry.text)}\nالتكرار: ${entry.repeat}"
 
+    /** يستخرج السنة الهجرية من نص التاريخ، مع دعم الأرقام العربية. */
+    fun hijriYear(value: String): Int? =
+        YEAR_REGEX.find(normalizeDigits(value))?.value?.toIntOrNull()
+
     fun upcomingTitle(entry: UpcomingEntry): String {
         val hijriYear = YEAR_REGEX.find(normalizeDigits(entry.hijriDate))?.value
         return if (hijriYear != null) "${entry.name} $hijriYear هـ" else entry.name
