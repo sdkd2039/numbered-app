@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit
 
 /**
  * قناتان في الشاشة الرئيسية لـ Android TV (Preview Channels):
- *  - الذكر: بطاقة لكل ذكر في ملف الأذكار.
+ *  - الذكر: ثلاث بطاقات للفئات (الصباح والمساء والمنوعة).
  *  - المتبقي: بطاقة لكل مناسبة قادمة مع العد التنازلي.
  *
  * قنوات الشاشة الرئيسية تتطلب Android 8.0 (API 26) فأعلى على جهاز Android TV.
@@ -66,7 +66,8 @@ object HomeChannels {
         val description: String,
         val type: Int,
         val weight: Int,
-        val intentUri: Uri
+        val intentUri: Uri,
+        val posterResId: Int
     )
 
     private val executor = Executors.newSingleThreadExecutor()
@@ -221,14 +222,23 @@ object HomeChannels {
     private fun buildDhikrCards(context: Context): List<Card>? {
         val csv = readAsset(context, ChannelData.DHIKR_CSV_PATH) ?: return null
         val entries = ChannelData.parseDhikr(csv)
-        return entries.mapIndexed { index, entry ->
+        val categories = listOf(
+            "الصباح" to R.drawable.dhikr_morning,
+            "المساء" to R.drawable.dhikr_evening,
+            "منوعة" to R.drawable.dhikr_misc
+        )
+        return categories.mapIndexedNotNull { index, (category, posterResId) ->
+            val categoryEntries = entries.filter { it.category.trim() == category }
+            if (categoryEntries.isEmpty()) return@mapIndexedNotNull null
+            val first = categoryEntries.first()
             Card(
-                internalId = "dhikr:${entry.id}",
-                title = ChannelData.dhikrTitle(entry),
-                description = ChannelData.dhikrDescription(entry),
+                internalId = "dhikr-category:$category",
+                title = category,
+                description = "عدد الأذكار: ${categoryEntries.size} · اضغط لفتح الفئة",
                 type = TvContractCompat.PreviewProgramColumns.TYPE_CLIP,
-                weight = entries.size - index,
-                intentUri = programIntentUri(context, CONTENT_TYPE_DHIKR, entry.id)
+                weight = categories.size - index,
+                intentUri = programIntentUri(context, CONTENT_TYPE_DHIKR, category),
+                posterResId = posterResId
             )
         }
     }
@@ -247,7 +257,8 @@ object HomeChannels {
                 description = ChannelData.upcomingDescription(entry, countdown),
                 type = TvContractCompat.PreviewProgramColumns.TYPE_EVENT,
                 weight = upcoming.size - index,
-                intentUri = programIntentUri(context, CONTENT_TYPE_REMAINING, id)
+                intentUri = programIntentUri(context, CONTENT_TYPE_REMAINING, id),
+                posterResId = R.drawable.tv_banner
             )
         }
     }
@@ -262,8 +273,8 @@ object HomeChannels {
         return Uri.parse(intent.toUri(Intent.URI_INTENT_SCHEME))
     }
 
-    private fun posterUri(context: Context): Uri =
-        Uri.parse("android.resource://${context.packageName}/${R.drawable.tv_banner}")
+    private fun posterUri(context: Context, resourceId: Int): Uri =
+        Uri.parse("android.resource://${context.packageName}/$resourceId")
 
     private fun buildProgram(context: Context, channelId: Long, card: Card): PreviewProgram =
         PreviewProgram.Builder()
@@ -271,7 +282,7 @@ object HomeChannels {
             .setType(card.type)
             .setTitle(card.title)
             .setDescription(card.description)
-            .setPosterArtUri(posterUri(context))
+            .setPosterArtUri(posterUri(context, card.posterResId))
             .setPosterArtAspectRatio(TvContractCompat.PreviewProgramColumns.ASPECT_RATIO_16_9)
             .setIntentUri(card.intentUri)
             .setInternalProviderId(card.internalId)
