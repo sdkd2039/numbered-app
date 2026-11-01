@@ -315,8 +315,23 @@ object HomeChannels {
         return Uri.parse(intent.toUri(Intent.URI_INTENT_SCHEME))
     }
 
-    private fun posterUri(context: Context, resourceId: Int): Uri =
-        Uri.parse("android.resource://${context.packageName}/$resourceId")
+    /**
+     * أضف بصمة تثبيت التطبيق إلى URI الملصق.
+     * بعض مشغلات Android TV تحتفظ بصورة PreviewProgram بحسب URI نفسه؛
+     * تغيير البصمة بعد تثبيت APK جديد يجعلها تطلب الصورة مجددًا.
+     */
+    private fun posterUri(context: Context, resourceId: Int): Uri {
+        val installVersion = try {
+            @Suppress("DEPRECATION")
+            context.packageManager.getPackageInfo(context.packageName, 0).lastUpdateTime
+        } catch (e: Exception) {
+            0L
+        }
+        return Uri.parse("android.resource://${context.packageName}/$resourceId")
+            .buildUpon()
+            .appendQueryParameter("v", installVersion.toString())
+            .build()
+    }
 
     private fun buildProgram(context: Context, channelId: Long, card: Card): PreviewProgram =
         PreviewProgram.Builder()
