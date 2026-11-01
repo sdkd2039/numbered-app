@@ -249,16 +249,27 @@ object HomeChannels {
         val upcoming = ChannelData.parseUpcoming(csv).mapNotNull { entry ->
             ChannelData.countdown(entry.startMillis, nowMillis)?.let { entry to it }
         }
-        return upcoming.mapIndexed { index, (entry, countdown) ->
+
+        // اعرض أقرب سنة هجرية قادمة والسنة التي تليها فقط.
+        // عند انتهاء مناسبات السنة الأولى ينتقل النطاق تلقائيًا إلى السنتين التاليتين.
+        val firstHijriYear = upcoming
+            .mapNotNull { (entry, _) -> ChannelData.hijriYear(entry.hijriDate) }
+            .minOrNull() ?: return emptyList()
+        val visible = upcoming.filter { (entry, _) ->
+            val year = ChannelData.hijriYear(entry.hijriDate)
+            year != null && year in firstHijriYear..(firstHijriYear + 1)
+        }
+
+        return visible.mapIndexed { index, (entry, countdown) ->
             val id = "${entry.startMillis}:${entry.name}"
             Card(
                 internalId = "remaining:$id",
                 title = ChannelData.upcomingTitle(entry),
                 description = ChannelData.upcomingDescription(entry, countdown),
                 type = TvContractCompat.PreviewProgramColumns.TYPE_EVENT,
-                weight = upcoming.size - index,
+                weight = visible.size - index,
                 intentUri = programIntentUri(context, CONTENT_TYPE_REMAINING, id),
-                posterResId = R.drawable.tv_banner
+                posterResId = remainingPoster(entry.name)
             )
         }
     }
