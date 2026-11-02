@@ -9,6 +9,25 @@ workflows:
       java: 17
 
     scripts:
+      - name: Check Firebase config for push notifications
+        script: |
+          python3 - <<'PY'
+          import json, os, sys
+          path = "app/google-services.json"
+          expected = "com.sutstude.numberedapp"
+          if not os.path.isfile(path):
+              sys.exit("ERROR: app/google-services.json is missing. Push notifications cannot register without it. "
+                       "Add it in Firebase Console > Project settings > Your apps (package " + expected + ").")
+          data = json.load(open(path, encoding="utf-8"))
+          pkgs = [c.get("client_info", {}).get("android_client_info", {}).get("package_name")
+                  for c in data.get("client", [])]
+          print("Firebase project:", data.get("project_info", {}).get("project_id"))
+          print("Packages in google-services.json:", pkgs)
+          if expected not in pkgs:
+              sys.exit("ERROR: google-services.json has no Android app for " + expected + ".")
+          print("OK: google-services.json matches " + expected)
+          PY
+
       - name: Build Android APK
         script: |
           echo "=== Enabling AndroidX ==="
@@ -71,6 +90,25 @@ workflows:
             exit 1
           fi
           echo "Keystore provided by Codemagic (path and passwords not printed)."
+
+      - name: Check Firebase config for push notifications
+        script: |
+          python3 - <<'PY'
+          import json, os, sys
+          path = "app/google-services.json"
+          expected = "com.sutstude.numberedapp"
+          if not os.path.isfile(path):
+              sys.exit("ERROR: app/google-services.json is missing. Push notifications cannot register without it. "
+                       "Add it in Firebase Console > Project settings > Your apps (package " + expected + ").")
+          data = json.load(open(path, encoding="utf-8"))
+          pkgs = [c.get("client_info", {}).get("android_client_info", {}).get("package_name")
+                  for c in data.get("client", [])]
+          print("Firebase project:", data.get("project_info", {}).get("project_id"))
+          print("Packages in google-services.json:", pkgs)
+          if expected not in pkgs:
+              sys.exit("ERROR: google-services.json has no Android app for " + expected + ".")
+          print("OK: google-services.json matches " + expected)
+          PY
 
       - name: Build Android Release APK
         script: |

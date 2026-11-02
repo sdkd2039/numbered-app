@@ -59,3 +59,8 @@ dependencies {
     // function, so the app needs them on its compile classpath. Same version OneSignal 5.9.2 uses.
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
 }
+
+// Firebase config for com.sutstude.numberedapp (app/google-services.json).
+// Without this plugin the file is ignored and OneSignal cannot get a push token
+// for this package. Must stay at the bottom of the file.
+apply plugin: 'com.google.gms.google-services'

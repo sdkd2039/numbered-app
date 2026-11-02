@@ -15,12 +15,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
-        <!-- OneSignal 5.11+ supports Firebase Installation ID registration when legacy FCM tokens are disabled. -->
-        <meta-data
-            android:name="firebase_messaging_installation_id_enabled"
-            android:value="true"
-            tools:replace="android:value" />
-
         <activity
             android:name=".MainActivity"
             android:exported="true">
