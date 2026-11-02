@@ -1,4 +1,4 @@
-package com.sutstude.numberedapp
+package com.sutstudio.numberedapp
 
 import android.app.AlarmManager
 import android.app.PendingIntent
