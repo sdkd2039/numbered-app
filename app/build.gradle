@@ -5,14 +5,14 @@ android {
     namespace 'com.sutstudio.numberedapp'
     compileSdk 34
 
-defaultConfig {
-    applicationId "com.sutstudio.numberedapp"
-    minSdk 21
-    targetSdk 34
+    defaultConfig {
+        applicationId "com.sutstudio.numberedapp"
+        minSdk 21
+        targetSdk 34
 
-    versionCode 110
-    versionName "1.1.0"
-}
+        versionCode 110
+        versionName "1.1.0"
+    }
 
     // Release signing is read from environment variables that Codemagic injects
     // from the keystore configured under Teams > Code signing identities.
@@ -53,14 +53,17 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.9.0'
 
-    // OneSignal push notifications (Stable channel per onesignal.github.io/sdk-releases/releases.json)
+    // OneSignal 5.11.0 supports Firebase Installation ID (FID) registration.
     implementation 'com.onesignal:OneSignal:5.11.0'
-    // OneSignal declares coroutines as runtime-only; requestPermission() is a suspend
-    // function, so the app needs them on its compile classpath. Same version OneSignal 5.9.2 uses.
+
+    // FID registration APIs are available in Firebase Messaging 25.1.0+.
+    // Pin a compatible version instead of relying on OneSignal's lower transitive range.
+    implementation 'com.google.firebase:firebase-messaging:25.1.1'
+
+    // OneSignal's requestPermission() API is suspend-based.
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
 }
 
-// Firebase config for com.sutstude.numberedapp (app/google-services.json).
-// Without this plugin the file is ignored and OneSignal cannot get a push token
-// for this package. Must stay at the bottom of the file.
+// Google Services reads app/google-services.json for the current applicationId.
+// Keep this plugin applied so Firebase configuration is included in the app build.
 apply plugin: 'com.google.gms.google-services'
