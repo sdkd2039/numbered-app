@@ -15,11 +15,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
-        <!-- OneSignal 5.11.0 FID registration requires Firebase Messaging 25.1.0+. -->
-        <meta-data
-            android:name="firebase_messaging_installation_id_enabled"
-            android:value="true" />
-
         <!-- Keep legacy FCM token registration enabled for OneSignal compatibility. -->
         <meta-data
             android:name="firebase_messaging_installation_id_enabled"
