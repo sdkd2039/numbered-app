@@ -1,4 +1,4 @@
-package com.sutstude.numberedapp
+package com.sutstudio.numberedapp
 
 import android.app.DownloadManager
 import android.content.ContentValues
