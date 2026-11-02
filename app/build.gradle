@@ -54,7 +54,7 @@ dependencies {
     implementation 'com.google.android.material:material:1.9.0'
 
     // OneSignal push notifications (Stable channel per onesignal.github.io/sdk-releases/releases.json)
-    implementation 'com.onesignal:OneSignal:5.10.2'
+    implementation 'com.onesignal:OneSignal:5.11.0'
     // OneSignal declares coroutines as runtime-only; requestPermission() is a suspend
     // function, so the app needs them on its compile classpath. Same version OneSignal 5.9.2 uses.
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
