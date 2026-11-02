@@ -53,12 +53,8 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.9.0'
 
-    // OneSignal 5.11.0 supports Firebase Installation ID (FID) registration.
+    // OneSignal SDK for push notifications.
     implementation 'com.onesignal:OneSignal:5.11.0'
-
-    // FID registration APIs are available in Firebase Messaging 25.1.0+.
-    // Pin a compatible version instead of relying on OneSignal's lower transitive range.
-    implementation 'com.google.firebase:firebase-messaging:25.1.1'
 
     // OneSignal's requestPermission() API is suspend-based.
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
