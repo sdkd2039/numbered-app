@@ -20,6 +20,12 @@
             android:name="firebase_messaging_installation_id_enabled"
             android:value="true" />
 
+        <!-- Keep legacy FCM token registration enabled for OneSignal compatibility. -->
+        <meta-data
+            android:name="firebase_messaging_installation_id_enabled"
+            android:value="false"
+            tools:replace="android:value" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
