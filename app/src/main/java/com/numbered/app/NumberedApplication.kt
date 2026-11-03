@@ -7,6 +7,9 @@ import com.onesignal.OneSignal
 import com.onesignal.debug.LogLevel
 import com.onesignal.user.subscriptions.IPushSubscriptionObserver
 import com.onesignal.user.subscriptions.PushSubscriptionChangedState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * Application entry point.
@@ -35,6 +38,16 @@ class NumberedApplication : Application() {
         OneSignal.User.pushSubscription.addObserver(pushSubscriptionObserver)
 
         Log.i(TAG, "OneSignal initialized; push id present=${!OneSignal.User.pushSubscription.id.isNullOrBlank()}, token present=${!OneSignal.User.pushSubscription.token.isNullOrBlank()}, optedIn=${OneSignal.User.pushSubscription.optedIn}")
+
+        // OneSignal's documented permission flow; request permission after SDK initialization.
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val granted = OneSignal.Notifications.requestPermission(true)
+                Log.i(TAG, "Notification permission request completed: granted=$granted")
+            } catch (e: Exception) {
+                Log.e(TAG, "OneSignal permission request failed", e)
+            }
+        }
     }
 
     companion object {
