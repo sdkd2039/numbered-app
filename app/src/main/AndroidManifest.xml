@@ -8,12 +8,17 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
-        android:name=".NumberedApplication"
+        android:name=".NumberedApplication"        android:name=".NumberedApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="معدودات"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+
+        <!-- OneSignal 5.11.0 supports Firebase Installation ID (FID) registration. -->
+        <meta-data
+            android:name="firebase_messaging_installation_id_enabled"
+            android:value="true" />
 
         <activity
             android:name=".MainActivity"
