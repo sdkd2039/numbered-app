@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "376443772905",
+    "project_id": "numbered-app-a5916",
+    "storage_bucket": "numbered-app-a5916.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:376443772905:android:e231091467428c6037b578",
+        "android_client_info": {
+          "package_name": "com.sutstudio.numberedapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCikY5OSTz9Mx5QmdW0Kxfc--DM9X1U-48"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
