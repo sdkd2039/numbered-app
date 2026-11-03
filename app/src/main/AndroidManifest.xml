@@ -15,13 +15,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
-        <!-- OneSignal 5.11.0: register push with the Firebase Installation ID (FID).
-             Needs firebase-messaging 25.1.2+ (app/build.gradle) and the default FirebaseApp
-             from google-services.json. Declared once; do not add it elsewhere. -->
-        <meta-data
-            android:name="firebase_messaging_installation_id_enabled"
-            android:value="true" />
-
+        <!-- Use OneSignal's standard FCM token registration; no FID override. -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -38,41 +32,28 @@
 
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-
-                <!-- تغيير التاريخ -->
                 <action android:name="android.intent.action.DATE_CHANGED" />
-
-                <!-- تغيير ساعة الجهاز -->
                 <action android:name="android.intent.action.TIME_SET" />
-
-                <!-- تغيير المنطقة الزمنية -->
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
-
-                <!-- تحديث الويدجت الخاص بنا -->
                 <action android:name="com.sutstudio.numberedapp.action.REMAINING_REFRESH" />
             </intent-filter>
 
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_remaining_info" />
-
         </receiver>
 
         <!-- ويدجت الذكر -->
         <receiver
             android:name=".DhikrWidget"
             android:exported="false">
-
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
-
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_dhikr_info" />
-
         </receiver>
 
     </application>
-
 </manifest>
