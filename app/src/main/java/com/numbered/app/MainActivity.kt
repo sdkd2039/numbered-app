@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Base64
+import android.util.Log
 import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
 import android.webkit.URLUtil
@@ -106,9 +107,12 @@ class MainActivity : AppCompatActivity() {
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 val hasPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    OneSignal.Notifications.permission ||
-                        OneSignal.Notifications.requestPermission(false)
+                    val alreadyGranted = OneSignal.Notifications.permission
+                    val granted = alreadyGranted || OneSignal.Notifications.requestPermission(false)
+                    Log.i(PushDiagnostics.TAG, "Notification permission: alreadyGranted=$alreadyGranted granted=$granted")
+                    granted
                 } else {
+                    Log.i(PushDiagnostics.TAG, "Runtime notification permission not needed on API ${Build.VERSION.SDK_INT}")
                     true
                 }
 
@@ -116,13 +120,13 @@ class MainActivity : AppCompatActivity() {
                 // This ensures the Android push subscription is created/resumed.
                 if (hasPermission) {
                     OneSignal.User.pushSubscription.optIn()
+                    Log.i(PushDiagnostics.TAG, "pushSubscription.optIn() called")
+                } else {
+                    Log.w(PushDiagnostics.TAG, "Notification permission denied; push subscription stays opted out")
                 }
+                PushDiagnostics.logSnapshot(applicationContext, "after-permission-flow")
             } catch (e: Exception) {
-                android.util.Log.e(
-                    "NumberedApp",
-                    "OneSignal push subscription opt-in failed",
-                    e
-                )
+                Log.e(PushDiagnostics.TAG, "Notification permission / opt-in flow failed: ${e.javaClass.name}: ${e.message}", e)
             }
         }
     }
@@ -273,6 +277,11 @@ class MainActivity : AppCompatActivity() {
             })();
         """.trimIndent()
         view.evaluateJavascript(javascript, null)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        PushDiagnostics.logSnapshot(applicationContext, "onResume")
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

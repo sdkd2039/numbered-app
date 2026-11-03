@@ -17,11 +17,18 @@ class NumberedApplication : Application() {
         val isDebuggable =
             (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
 
-        if (isDebuggable) {
-            OneSignal.Debug.logLevel = LogLevel.VERBOSE
-        }
+        // VERBOSE in debug builds; INFO in release so registration errors are still visible in logcat.
+        OneSignal.Debug.logLevel = if (isDebuggable) LogLevel.VERBOSE else LogLevel.INFO
 
-        OneSignal.initWithContext(this, ONESIGNAL_APP_ID)
+        PushDiagnostics.logEnvironment(this)
+
+        try {
+            OneSignal.initWithContext(this, ONESIGNAL_APP_ID)
+            PushDiagnostics.registerObservers()
+        } catch (e: Throwable) {
+            // Push failing must not take the whole app down, but it must never be silent.
+            PushDiagnostics.recordInitError(e)
+        }
     }
 
     companion object {

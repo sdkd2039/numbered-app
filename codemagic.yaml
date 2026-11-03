@@ -25,7 +25,13 @@ workflows:
           print("Packages in google-services.json:", pkgs)
           if expected not in pkgs:
               sys.exit("ERROR: google-services.json has no Android app for " + expected + ".")
-          print("OK: google-services.json matches " + expected)
+          expected_project = "numbered-app-a5916"
+          actual_project = data.get("project_info", {}).get("project_id")
+          if actual_project != expected_project:
+              sys.exit("ERROR: google-services.json belongs to Firebase project '" + str(actual_project) +
+                       "' but this app must use '" + expected_project + "'. Download the new file from "
+                       "Firebase Console > Project settings > Your apps (" + expected + ") and replace app/google-services.json.")
+          print("OK: google-services.json matches " + expected + " in project " + expected_project)
           PY
 
       - name: Build Android APK
@@ -107,7 +113,13 @@ workflows:
           print("Packages in google-services.json:", pkgs)
           if expected not in pkgs:
               sys.exit("ERROR: google-services.json has no Android app for " + expected + ".")
-          print("OK: google-services.json matches " + expected)
+          expected_project = "numbered-app-a5916"
+          actual_project = data.get("project_info", {}).get("project_id")
+          if actual_project != expected_project:
+              sys.exit("ERROR: google-services.json belongs to Firebase project '" + str(actual_project) +
+                       "' but this app must use '" + expected_project + "'. Download the new file from "
+                       "Firebase Console > Project settings > Your apps (" + expected + ") and replace app/google-services.json.")
+          print("OK: google-services.json matches " + expected + " in project " + expected_project)
           PY
 
       - name: Build Android Release APK
