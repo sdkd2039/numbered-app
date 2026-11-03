@@ -1,0 +1,66 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+
+android {
+    namespace 'com.sutstudio.numberedapp'
+    compileSdk 34
+
+defaultConfig {
+    applicationId "com.sutstudio.numberedapp"
+    minSdk 21
+    targetSdk 34
+
+    versionCode 110
+    versionName "1.1.0"
+}
+
+    // Release signing is read from environment variables that Codemagic injects
+    // from the keystore configured under Teams > Code signing identities.
+    // Nothing secret is stored in this repository.
+    signingConfigs {
+        release {
+            def keystorePath = System.getenv("CM_KEYSTORE_PATH")
+            if (keystorePath) {
+                storeFile file(keystorePath)
+                storePassword System.getenv("CM_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("CM_KEY_ALIAS")
+                keyPassword System.getenv("CM_KEY_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (System.getenv("CM_KEYSTORE_PATH")) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.9.0'
+
+    // OneSignal push notifications (Stable channel per onesignal.github.io/sdk-releases/releases.json)
+    implementation 'com.onesignal:OneSignal:5.11.0'
+    // OneSignal declares coroutines as runtime-only; requestPermission() is a suspend
+    // function, so the app needs them on its compile classpath. Same version OneSignal 5.9.2 uses.
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
+}
+
+// Firebase config for com.sutstude.numberedapp (app/google-services.json).
+// Without this plugin the file is ignored and OneSignal cannot get a push token
+// for this package. Must stay at the bottom of the file.
+apply plugin: 'com.google.gms.google-services'

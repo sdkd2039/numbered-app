@@ -1,0 +1,218 @@
+ 
+workflows:
+  android-workflow:
+    name: Build Numbered App
+    max_build_duration: 30
+    instance_type: mac_mini_m1
+
+    environment:
+      java: 17
+
+    scripts:
+      - name: Check Firebase config for push notifications
+        script: |
+          python3 - <<'PY'
+          import json, os, sys
+          path = "app/google-services.json"
+          expected = "com.sutstudio.numberedapp"
+          if not os.path.isfile(path):
+              sys.exit("ERROR: app/google-services.json is missing. Push notifications cannot register without it. "
+                       "Add it in Firebase Console > Project settings > Your apps (package " + expected + ").")
+          data = json.load(open(path, encoding="utf-8"))
+          pkgs = [c.get("client_info", {}).get("android_client_info", {}).get("package_name")
+                  for c in data.get("client", [])]
+          print("Firebase project:", data.get("project_info", {}).get("project_id"))
+          print("Packages in google-services.json:", pkgs)
+          if expected not in pkgs:
+              sys.exit("ERROR: google-services.json has no Android app for " + expected + ".")
+          print("OK: google-services.json matches " + expected)
+          PY
+
+      - name: Build Android APK
+        script: |
+          echo "=== Enabling AndroidX ==="
+
+          if ! grep -q "^android.useAndroidX=" gradle.properties; then
+            echo "android.useAndroidX=true" >> gradle.properties
+          fi
+
+          if ! grep -q "^android.enableJetifier=" gradle.properties; then
+            echo "android.enableJetifier=true" >> gradle.properties
+          fi
+
+          echo "=== Creating launcher icon folders ==="
+          mkdir -p app/src/main/res/mipmap-mdpi
+          mkdir -p app/src/main/res/mipmap-hdpi
+          mkdir -p app/src/main/res/mipmap-xhdpi
+          mkdir -p app/src/main/res/mipmap-xxhdpi
+          mkdir -p app/src/main/res/mipmap-xxxhdpi
+
+          echo "=== Downloading app icon ==="
+          ICON_URL="https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png"
+          for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            curl -fL "$ICON_URL" -o "app/src/main/res/mipmap-${density}/ic_launcher.png" || exit 1
+          done
+
+          echo "=== Building DEBUG APK ==="
+          chmod +x gradlew
+          ./gradlew --version
+          ./gradlew clean :app:assembleDebug
+
+    artifacts:
+      - app/build/outputs/apk/debug/*.apk
+
+    publishing:
+      email:
+        recipients:
+          - sultan2021alamoudi@gmail.com
+        notify:
+          failure: true
+          success: false
+
+  # Signed RELEASE APK.
+  # The keystore reference must exist in Codemagic.
+  android-release-workflow:
+    name: Build Numbered App (Release)
+    max_build_duration: 30
+    instance_type: mac_mini_m1
+
+    environment:
+      java: 17
+      android_signing:
+        - numbered_release_keystore
+
+    scripts:
+      - name: Check release signing is available
+        script: |
+          if [ -z "$CM_KEYSTORE_PATH" ]; then
+            echo "ERROR: No Android keystore was provided by Codemagic."
+            echo "Check the Android keystore reference in Codemagic."
+            exit 1
+          fi
+          echo "Keystore provided by Codemagic (path and passwords not printed)."
+
+      - name: Check Firebase config for push notifications
+        script: |
+          python3 - <<'PY'
+          import json, os, sys
+          path = "app/google-services.json"
+          expected = "com.sutstudio.numberedapp"
+          if not os.path.isfile(path):
+              sys.exit("ERROR: app/google-services.json is missing. Push notifications cannot register without it. "
+                       "Add it in Firebase Console > Project settings > Your apps (package " + expected + ").")
+          data = json.load(open(path, encoding="utf-8"))
+          pkgs = [c.get("client_info", {}).get("android_client_info", {}).get("package_name")
+                  for c in data.get("client", [])]
+          print("Firebase project:", data.get("project_info", {}).get("project_id"))
+          print("Packages in google-services.json:", pkgs)
+          if expected not in pkgs:
+              sys.exit("ERROR: google-services.json has no Android app for " + expected + ".")
+          print("OK: google-services.json matches " + expected)
+          PY
+
+      - name: Build Android Release APK
+        script: |
+          echo "=== Enabling AndroidX ==="
+
+          if ! grep -q "^android.useAndroidX=" gradle.properties; then
+            echo "android.useAndroidX=true" >> gradle.properties
+          fi
+
+          if ! grep -q "^android.enableJetifier=" gradle.properties; then
+            echo "android.enableJetifier=true" >> gradle.properties
+          fi
+
+          echo "=== Creating launcher icon folders ==="
+          mkdir -p app/src/main/res/mipmap-mdpi
+          mkdir -p app/src/main/res/mipmap-hdpi
+          mkdir -p app/src/main/res/mipmap-xhdpi
+          mkdir -p app/src/main/res/mipmap-xxhdpi
+          mkdir -p app/src/main/res/mipmap-xxxhdpi
+
+          echo "=== Downloading app icon ==="
+          ICON_URL="https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png"
+          for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            curl -fL "$ICON_URL" -o "app/src/main/res/mipmap-${density}/ic_launcher.png" || exit 1
+          done
+
+          echo "=== Building RELEASE APK ==="
+          chmod +x gradlew
+          ./gradlew --version
+          ./gradlew clean :app:assembleRelease
+
+      - name: Verify the release APK is signed
+        script: |
+          ls -l app/build/outputs/apk/release/
+          if ls app/build/outputs/apk/release/*unsigned*.apk >/dev/null 2>&1; then
+            echo "ERROR: Gradle produced an unsigned APK. Check the keystore reference."
+            exit 1
+          fi
+
+    artifacts:
+      - app/build/outputs/apk/release/*.apk
+
+    publishing:
+      email:
+        recipients:
+          - sultan2021alamoudi@gmail.com
+        notify:
+          failure: true
+          success: true
+
+  # Independent Android TV APK.
+
+  android-tv-workflow:
+    name: Build Numbered TV
+    max_build_duration: 30
+    instance_type: mac_mini_m1
+
+    environment:
+      java: 17
+
+    scripts:
+      - name: Inspect TV Manifest
+        script: |
+          echo "=== Repository directory ==="
+          pwd
+
+          echo "=== Check TV manifest exists ==="
+          if [ ! -f tv/src/main/AndroidManifest.xml ]; then
+            echo "ERROR: TV AndroidManifest.xml not found"
+            exit 1
+          fi
+
+          echo "=== Manifest with line numbers ==="
+          nl -ba tv/src/main/AndroidManifest.xml
+
+          echo "=== XML declaration locations ==="
+          grep -n '<?xml' tv/src/main/AndroidManifest.xml || true
+
+          echo "=== Validate XML ==="
+          python3 -c 'import xml.etree.ElementTree as ET; ET.parse("tv/src/main/AndroidManifest.xml"); print("Manifest XML is valid")'
+
+      - name: Build Android TV APK
+        script: |
+          echo "=== Enabling AndroidX ==="
+
+          if ! grep -q "^android.useAndroidX=" gradle.properties; then
+            echo "android.useAndroidX=true" >> gradle.properties
+          fi
+
+          if ! grep -q "^android.enableJetifier=" gradle.properties; then
+            echo "android.enableJetifier=true" >> gradle.properties
+          fi
+
+          chmod +x gradlew
+          ./gradlew --version
+          ./gradlew :tv:assembleDebug --stacktrace
+
+    artifacts:
+      - tv/build/outputs/apk/debug/*.apk
+
+    publishing:
+      email:
+        recipients:
+          - sultan2021alamoudi@gmail.com
+        notify:
+          failure: true
+          success: false
