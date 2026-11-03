@@ -26,6 +26,6 @@ class NumberedApplication : Application() {
 
     companion object {
         private const val ONESIGNAL_APP_ID =
-            "1f922d01-9839-40aa-a468-4aff02cf5b87"
+            "93814662-e055-4f18-bff7-425b9612c207"
     }
 }
