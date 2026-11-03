@@ -2,11 +2,11 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    namespace 'com.sutstude.numberedapp'
+    namespace 'com.sutstudio.numberedapp'
     compileSdk 34
 
 defaultConfig {
-    applicationId "com.sutstude.numberedapp"
+    applicationId "com.sutstudio.numberedapp"
     minSdk 21
     targetSdk 34
 
