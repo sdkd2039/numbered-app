@@ -53,14 +53,14 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.9.0'
 
-    // OneSignal push notifications (Stable channel per onesignal.github.io/sdk-releases/releases.json)
+    // OneSignal Android SDK 5.11.0 (Current channel).
     implementation 'com.onesignal:OneSignal:5.11.0'
     // OneSignal declares coroutines as runtime-only; requestPermission() is a suspend
     // function, so the app needs them on its compile classpath. Same version OneSignal 5.9.2 uses.
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
 }
 
-// Firebase config for com.sutstude.numberedapp (app/google-services.json).
+// Firebase config for com.sutstudio.numberedapp (app/google-services.json).
 // Without this plugin the file is ignored and OneSignal cannot get a push token
 // for this package. Must stay at the bottom of the file.
 apply plugin: 'com.google.gms.google-services'
