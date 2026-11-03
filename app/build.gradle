@@ -7,7 +7,9 @@ android {
 
 defaultConfig {
     applicationId "com.sutstudio.numberedapp"
-    minSdk 21
+    // 23: required by firebase-messaging 25.x, which OneSignal's Firebase Installation ID
+    // (FID) push registration needs (OneSignal docs: "Android API 23+ for 25.x").
+    minSdk 23
     targetSdk 34
 
     versionCode 110
@@ -58,9 +60,15 @@ dependencies {
     // OneSignal declares coroutines as runtime-only; requestPermission() is a suspend
     // function, so the app needs them on its compile classpath. Same version OneSignal 5.9.2 uses.
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
+
+    // FID push registration (enabled in AndroidManifest.xml) needs firebase-messaging 25.1.2+.
+    // OneSignal's own transitive range is lower, which leaves FID registration unavailable
+    // (OneSignal status -33). Range recommended by OneSignal's Firebase Installation ID docs.
+    implementation 'com.google.firebase:firebase-messaging:[25.1.2, 25.99.99]'
 }
 
-// Firebase config for com.sutstude.numberedapp (app/google-services.json).
-// Without this plugin the file is ignored and OneSignal cannot get a push token
-// for this package. Must stay at the bottom of the file.
+// Firebase config for com.sutstudio.numberedapp (app/google-services.json).
+// FID registration needs this default FirebaseApp (OneSignal status -32 without it), and its
+// Firebase project must be the same one whose service account is uploaded to OneSignal.
+// Must stay at the bottom of the file.
 apply plugin: 'com.google.gms.google-services'

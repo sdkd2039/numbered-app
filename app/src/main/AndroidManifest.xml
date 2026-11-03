@@ -15,6 +15,13 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
+        <!-- OneSignal 5.11.0: register push with the Firebase Installation ID (FID).
+             Needs firebase-messaging 25.1.2+ (app/build.gradle) and the default FirebaseApp
+             from google-services.json. Declared once; do not add it elsewhere. -->
+        <meta-data
+            android:name="firebase_messaging_installation_id_enabled"
+            android:value="true" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
