@@ -10,7 +10,6 @@ import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Base64
-import android.util.Log
 import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
 import android.webkit.URLUtil
@@ -20,7 +19,6 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.onesignal.OneSignal
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
 import java.net.URISyntaxException
@@ -91,31 +89,6 @@ class MainActivity : AppCompatActivity() {
         if (savedInstanceState != null) webView.restoreState(savedInstanceState)
         else webView.loadUrl(homeUrl)
 
-        requestNotificationPermissionIfNeeded()
-    }
-
-    /**
-     * Android 13+ (API 33) requires the POST_NOTIFICATIONS runtime permission.
-     * OneSignal shows the system dialog. fallbackToSettings = false means a user
-     * who denied is never pushed to system settings; they can still enable
-     * notifications later from Settings, and the rest of the app is unaffected.
-     */
-    private fun requestNotificationPermissionIfNeeded() {
-        // optIn() both requests notification permission when needed and explicitly
-        // enables the OneSignal push subscription.
-        try {
-            Log.i("NumberedOneSignal", "Calling pushSubscription.optIn()")
-            OneSignal.User.pushSubscription.optIn()
-            Log.i(
-                "NumberedOneSignal",
-                "After optIn: permission=${OneSignal.Notifications.permission}, " +
-                    "idPresent=${!OneSignal.User.pushSubscription.id.isNullOrBlank()}, " +
-                    "tokenPresent=${!OneSignal.User.pushSubscription.token.isNullOrBlank()}, " +
-                    "optedIn=${OneSignal.User.pushSubscription.optedIn}"
-            )
-        } catch (e: Exception) {
-            Log.e("NumberedOneSignal", "Failed to opt in to push subscription", e)
-        }
     }
 
     private fun showOfflinePage() {
