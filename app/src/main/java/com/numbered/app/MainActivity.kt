@@ -103,15 +103,28 @@ class MainActivity : AppCompatActivity() {
      * notifications later from Settings, and the rest of the app is unaffected.
      */
     private fun requestNotificationPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
-        try {
-            if (OneSignal.Notifications.permission) return
-            CoroutineScope(Dispatchers.Main).launch {
-                try {
-                    OneSignal.Notifications.requestPermission(false)
-                } catch (_: Exception) { }
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                val hasPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    OneSignal.Notifications.permission ||
+                        OneSignal.Notifications.requestPermission(false)
+                } else {
+                    true
+                }
+
+                // Explicitly opt in after notification permission is available.
+                // This ensures the Android push subscription is created/resumed.
+                if (hasPermission) {
+                    OneSignal.User.pushSubscription.optIn()
+                }
+            } catch (e: Exception) {
+                android.util.Log.e(
+                    "NumberedApp",
+                    "OneSignal push subscription opt-in failed",
+                    e
+                )
             }
-        } catch (_: Exception) { }
+        }
     }
 
     private fun showOfflinePage() {
