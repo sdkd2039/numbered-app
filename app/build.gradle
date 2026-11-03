@@ -5,16 +5,15 @@ android {
     namespace 'com.sutstudio.numberedapp'
     compileSdk 34
 
-defaultConfig {
-    applicationId "com.sutstudio.numberedapp"
-    // 23: required by firebase-messaging 25.x, which OneSignal's Firebase Installation ID
-    // (FID) push registration needs (OneSignal docs: "Android API 23+ for 25.x").
-    minSdk 23
-    targetSdk 34
+    defaultConfig {
+        applicationId "com.sutstudio.numberedapp"
+        // Keep API 21 compatibility; the app uses OneSignal's standard FCM registration.
+        minSdk 21
+        targetSdk 34
 
-    versionCode 110
-    versionName "1.1.0"
-}
+        versionCode 110
+        versionName "1.1.0"
+    }
 
     // Release signing is read from environment variables that Codemagic injects
     // from the keystore configured under Teams > Code signing identities.
@@ -55,20 +54,13 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.9.0'
 
-    // OneSignal push notifications (Stable channel per onesignal.github.io/sdk-releases/releases.json)
+    // OneSignal push notifications.
     implementation 'com.onesignal:OneSignal:5.11.0'
-    // OneSignal declares coroutines as runtime-only; requestPermission() is a suspend
-    // function, so the app needs them on its compile classpath. Same version OneSignal 5.9.2 uses.
+    // OneSignal's requestPermission() API is suspend-based.
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
-
-    // FID push registration (enabled in AndroidManifest.xml) needs firebase-messaging 25.1.2+.
-    // OneSignal's own transitive range is lower, which leaves FID registration unavailable
-    // (OneSignal status -33). Range recommended by OneSignal's Firebase Installation ID docs.
-    implementation 'com.google.firebase:firebase-messaging:[25.1.2, 25.99.99]'
 }
 
-// Firebase config for com.sutstudio.numberedapp (app/google-services.json).
-// FID registration needs this default FirebaseApp (OneSignal status -32 without it), and its
-// Firebase project must be the same one whose service account is uploaded to OneSignal.
+// Firebase configuration for the Android application (app/google-services.json).
+// Keep the Google Services plugin for the standard Firebase/FCM setup.
 // Must stay at the bottom of the file.
 apply plugin: 'com.google.gms.google-services'
