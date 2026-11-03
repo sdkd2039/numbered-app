@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Base64
+import android.util.Log
 import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
 import android.webkit.URLUtil
@@ -20,9 +21,6 @@ import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.onesignal.OneSignal
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
 import java.net.URISyntaxException
@@ -103,15 +101,21 @@ class MainActivity : AppCompatActivity() {
      * notifications later from Settings, and the rest of the app is unaffected.
      */
     private fun requestNotificationPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        // optIn() both requests notification permission when needed and explicitly
+        // enables the OneSignal push subscription.
         try {
-            if (OneSignal.Notifications.permission) return
-            CoroutineScope(Dispatchers.Main).launch {
-                try {
-                    OneSignal.Notifications.requestPermission(false)
-                } catch (_: Exception) { }
-            }
-        } catch (_: Exception) { }
+            Log.i("NumberedOneSignal", "Calling pushSubscription.optIn()")
+            OneSignal.User.pushSubscription.optIn()
+            Log.i(
+                "NumberedOneSignal",
+                "After optIn: permission=${OneSignal.Notifications.permission}, " +
+                    "idPresent=${!OneSignal.User.pushSubscription.id.isNullOrBlank()}, " +
+                    "tokenPresent=${!OneSignal.User.pushSubscription.token.isNullOrBlank()}, " +
+                    "optedIn=${OneSignal.User.pushSubscription.optedIn}"
+            )
+        } catch (e: Exception) {
+            Log.e("NumberedOneSignal", "Failed to opt in to push subscription", e)
+        }
     }
 
     private fun showOfflinePage() {
