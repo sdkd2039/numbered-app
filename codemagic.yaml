@@ -178,3 +178,47 @@ workflows:
         notify:
           failure: true
           success: false
+
+  # Native iOS app + WidgetKit extensions (iPhone/iPad).
+  # Requires Apple Developer signing assets configured in Codemagic.
+  ios-workflow:
+    name: Build Numbered iOS
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.sutstudio.numbered
+      vars:
+        XCODE_PROJECT: "ios/Numbered.xcodeproj"
+        XCODE_SCHEME: "Numbered"
+        APP_STORE_CONNECT_APP_ID: ""
+
+    scripts:
+      - name: Install XcodeGen
+        script: |
+          brew install xcodegen
+          xcodegen generate --spec ios/project.yml
+
+      - name: Configure signing
+        script: |
+          xcode-project use-profiles
+
+      - name: Build signed IPA
+        script: |
+          xcode-project build-ipa \
+            --project "$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME"
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      email:
+        recipients:
+          - sultan2021alamoudi@gmail.com
+        notify:
+          failure: true
+          success: true
