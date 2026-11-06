@@ -1,0 +1,9 @@
+# Xcode generated files
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM
