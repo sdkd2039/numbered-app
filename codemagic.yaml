@@ -193,7 +193,6 @@ workflows:
       vars:
         XCODE_PROJECT: "ios/Numbered.xcodeproj"
         XCODE_SCHEME: "Numbered"
-        APP_STORE_CONNECT_APP_ID: ""
 
     scripts:
       - name: Install XcodeGen
