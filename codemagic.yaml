@@ -178,3 +178,64 @@ workflows:
         notify:
           failure: true
           success: false
+
+  # Google Play release: signed Android App Bundle (.aab).
+  android-play-aab-workflow:
+    name: Build Numbered App for Google Play (AAB)
+    max_build_duration: 30
+    instance_type: mac_mini_m1
+
+    environment:
+      java: 17
+      android_signing:
+        - numbered_release_keystore
+
+    scripts:
+      - name: Verify release signing configuration
+        script: |
+          if [ -z "$CM_KEYSTORE_PATH" ]; then
+            echo "ERROR: Codemagic did not provide the configured Android keystore."
+            exit 1
+          fi
+          echo "Release keystore is available."
+
+      - name: Install Android 16 SDK
+        script: |
+          yes | sdkmanager --licenses >/dev/null
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Prepare launcher icons
+        script: |
+          mkdir -p app/src/main/res/mipmap-mdpi
+          mkdir -p app/src/main/res/mipmap-hdpi
+          mkdir -p app/src/main/res/mipmap-xhdpi
+          mkdir -p app/src/main/res/mipmap-xxhdpi
+          mkdir -p app/src/main/res/mipmap-xxxhdpi
+          ICON_URL="https://raw.githubusercontent.com/sdkd2039/Numbered/refs/heads/main/T401783946968724.png"
+          for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            curl -fL "$ICON_URL" -o "app/src/main/res/mipmap-${density}/ic_launcher.png" || exit 1
+          done
+
+      - name: Build signed Google Play App Bundle
+        script: |
+          chmod +x gradlew
+          ./gradlew --version
+          ./gradlew clean :app:bundleRelease --stacktrace
+          AAB="app/build/outputs/bundle/release/app-release.aab"
+          if [ ! -s "$AAB" ]; then
+            echo "ERROR: Expected AAB was not generated."
+            exit 1
+          fi
+          jarsigner -verify "$AAB" >/dev/null
+          echo "AAB exists and its signature verification passed."
+
+    artifacts:
+      - app/build/outputs/bundle/release/*.aab
+
+    publishing:
+      email:
+        recipients:
+          - sultan2021alamoudi@gmail.com
+        notify:
+          failure: true
+          success: true
