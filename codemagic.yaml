@@ -1,4 +1,3 @@
-
 workflows:
   android-workflow:
     name: Build Numbered App
@@ -201,8 +200,35 @@ workflows:
 
       - name: Install Android 16 SDK
         script: |
-          yes | sdkmanager --licenses >/dev/null
-          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+          echo "=== Locating Android SDK command-line tools ==="
+          SDKMANAGER=""
+
+          for SDK_ROOT in "${ANDROID_SDK_ROOT:-}" "${ANDROID_HOME:-}" "$HOME/Library/Android/sdk"; do
+            if [ -n "$SDK_ROOT" ] && [ -x "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" ]; then
+              SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+              break
+            fi
+          done
+
+          if [ -z "$SDKMANAGER" ]; then
+            SEARCH_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-$HOME/Library/Android/sdk}}"
+            if [ -d "$SEARCH_ROOT/cmdline-tools" ]; then
+              SDKMANAGER="$(find "$SEARCH_ROOT/cmdline-tools" -type f -name sdkmanager -perm -111 -print -quit)"
+            fi
+          fi
+
+          if [ -z "$SDKMANAGER" ] || [ ! -x "$SDKMANAGER" ]; then
+            echo "ERROR: sdkmanager was not found."
+            echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-not-set}"
+            echo "ANDROID_HOME=${ANDROID_HOME:-not-set}"
+            echo "Available Android SDK directories:"
+            ls -la "$HOME/Library/Android/sdk" 2>/dev/null || true
+            exit 1
+          fi
+
+          echo "Using sdkmanager at: $SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null
+          "$SDKMANAGER" --install "platforms;android-36" "build-tools;36.0.0"
 
       - name: Prepare launcher icons
         script: |
